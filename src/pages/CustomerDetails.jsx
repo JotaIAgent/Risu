@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { ArrowLeft, User, Phone, Mail, FileText, DollarSign, Calendar, Clock, CheckCircle, XCircle, StickyNote, Edit3, AlertCircle, MapPin, Crown, Package, PlusCircle, MessageCircle } from 'lucide-react'
 import { useDialog } from '../components/DialogProvider'
+import PageTitle from '../components/PageTitle'
 
 export default function CustomerDetails() {
     const { id } = useParams()
@@ -202,6 +203,7 @@ export default function CustomerDetails() {
 
     return (
         <div className="max-w-5xl mx-auto space-y-8 pb-12">
+            <PageTitle title={`${customer.name} | Perfil`} />
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">

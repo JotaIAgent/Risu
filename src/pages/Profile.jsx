@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { User, Phone, FileText, Lock, Mail, Save, Info, MessageCircle } from 'lucide-react'
 import { useDialog } from '../components/DialogProvider'
+import PageTitle from '../components/PageTitle'
 
 export default function Profile() {
     const { user } = useAuth()
@@ -153,6 +154,7 @@ export default function Profile() {
 
     return (
         <div className="max-w-3xl mx-auto space-y-8 pb-12">
+            <PageTitle title="Meu Perfil" />
             <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 text-primary rounded-lg">
                     <User size={24} />

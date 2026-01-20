@@ -1,4 +1,5 @@
 import React from 'react'
+import PageTitle from '../components/PageTitle'
 import { useNavigate } from 'react-router-dom'
 import {
     LayoutDashboard,
@@ -80,6 +81,7 @@ export default function Guide() {
 
     return (
         <div className="min-h-screen bg-slate-50 pt-10 pb-20 px-6 animate-in fade-in duration-700">
+            <PageTitle title="Guia do Risu" />
             <div className="max-w-6xl mx-auto">
                 {/* Header Actions */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-16">

@@ -8,6 +8,7 @@ import { ArrowLeft, Download, FileText, Calendar, User, Package, DollarSign, Edi
 import { generateQuotePDF, generateContractPDF } from '../lib/pdfGenerator'
 import { useDialog } from '../components/DialogProvider'
 import QuoteConversionModal from '../components/QuoteConversionModal'
+import PageTitle from '../components/PageTitle'
 
 export default function QuoteDetails() {
     const { id } = useParams()
@@ -411,6 +412,7 @@ export default function QuoteDetails() {
 
     return (
         <div className="max-w-5xl mx-auto space-y-8 pb-12">
+            <PageTitle title={`Orçamento #${quote.id.slice(0, 8)} | ${quote.customers?.name}`} />
             {/* Header / Nav */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center gap-4">

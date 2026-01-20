@@ -42,6 +42,8 @@ import Billing from './pages/Billing'
 import Account from './pages/Account'
 import ConfirmEmail from './pages/ConfirmEmail'
 import Guide from './pages/Guide'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 // Custom Protected Route for Clients (Users)
 const ProtectedRoute = () => {
@@ -145,6 +147,8 @@ function App() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/confirm-email" element={<ConfirmEmail />} />
+          <Route path="/forgot-password" element={getAuthRedirect(ForgotPassword)} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/suspended" element={
             <div className="min-h-screen flex items-center justify-center bg-slate-50 p-8 text-center font-black uppercase tracking-widest text-red-600 italic">
               Sua conta foi suspensa temporariamente. Entre em contato com o administrador.

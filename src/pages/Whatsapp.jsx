@@ -5,6 +5,7 @@ import { QrCode, CheckCircle, Smartphone, LogOut, Info, MessageCircle, Plus, Tra
 import { useDialog } from '../components/DialogProvider'
 import { format, subDays, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import PageTitle from '../components/PageTitle'
 
 export default function Whatsapp() {
     const { user } = useAuth()
@@ -505,6 +506,7 @@ export default function Whatsapp() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-8">
+            <PageTitle title="WhatsApp" />
             <div className="text-center">
                 <h2 className="text-3xl font-black uppercase tracking-tight text-text-primary-light dark:text-text-primary-dark">Controle WhatsApp</h2>
                 <p className="text-text-secondary-light dark:text-text-secondary-dark mt-2 font-medium">

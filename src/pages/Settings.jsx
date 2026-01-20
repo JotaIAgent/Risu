@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useDialog } from '../components/DialogProvider'
+import PageTitle from '../components/PageTitle'
 import {
     User,
     Building2,
@@ -279,6 +280,7 @@ export default function Settings() {
 
     return (
         <div className="max-w-5xl mx-auto pb-20 md:pb-6 space-y-8">
+            <PageTitle title="Configurações" />
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-[#13283b] uppercase tracking-tighter">Configurações</h1>

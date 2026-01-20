@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import PageTitle from '../components/PageTitle'
 import {
     FileDown, TrendingUp, Package, Users, AlertCircle, Calendar,
     ChevronDown, ChevronRight, DollarSign, Truck, Download,
@@ -451,6 +452,7 @@ export default function Reports() {
     if (view === 'report' && activeReport) {
         return (
             <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+                <PageTitle title={`Relatório: ${activeReport.name}`} />
                 {/* Report Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
                     <div className="flex items-center gap-4">
@@ -613,6 +615,7 @@ export default function Reports() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+            <PageTitle title="Relatórios" />
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>

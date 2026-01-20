@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { Plus, DollarSign, TrendingUp, TrendingDown, Calendar, Search, Filter, Trash2, ArrowUpRight, ArrowDownLeft, Briefcase, FileText, CreditCard, Wallet, Settings, RefreshCw, PlusCircle, Save } from 'lucide-react'
 import { useDialog } from '../components/DialogProvider'
 import TransactionModal from '../components/TransactionModal'
+import PageTitle from '../components/PageTitle'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -338,6 +339,7 @@ export default function Finance() {
 
     return (
         <div className="space-y-8 pb-20">
+            <PageTitle title="Financeiro" />
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>

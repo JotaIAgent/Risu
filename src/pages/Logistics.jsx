@@ -7,6 +7,7 @@ import { format, isSameDay, parseISO, startOfDay, addDays, isBefore, isAfter } f
 import { ptBR } from 'date-fns/locale'
 import DriversManager from '../components/DriversManager'
 import { useDialog } from '../components/DialogProvider'
+import PageTitle from '../components/PageTitle'
 
 // Helper Enums
 const LOGISTICS_STATUS = {
@@ -272,6 +273,7 @@ export default function Logistics() {
 
     return (
         <div className="space-y-6 pb-20">
+            <PageTitle title="Logística" />
             {/* Header / Top Bar */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-surface-light dark:bg-surface-dark p-4 rounded-2xl border border-border-light dark:border-border-dark shadow-sm">
                 <div>

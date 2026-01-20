@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Save, FileText, Info, MessageSquare, Upload, FileSignature, Plus, Trash2, Clock } from 'lucide-react'
 import { useDialog } from '../components/DialogProvider'
+import PageTitle from '../components/PageTitle'
 import { generateQuotePDF, generateContractPDF } from '../lib/pdfGenerator'
 
 export default function Contracts() {
@@ -315,6 +316,7 @@ export default function Contracts() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-12">
+            <PageTitle title="Contratos" />
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Modelos e Configurações</h2>
             </div>

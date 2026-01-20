@@ -10,6 +10,7 @@ import { ptBR } from 'date-fns/locale'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, LayoutList, CalendarDays as CalendarDaysIcon, Loader2 } from 'lucide-react'
 import { AgendaDayView } from '../components/agenda/AgendaDayView'
 import { useDialog } from '../components/DialogProvider'
+import PageTitle from '../components/PageTitle'
 
 export default function RentalCalendar() {
     const navigate = useNavigate()
@@ -200,6 +201,7 @@ export default function RentalCalendar() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-6 pb-20">
+            <PageTitle title="Agenda" />
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                 <div>

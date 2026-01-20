@@ -137,6 +137,14 @@ export const AuthProvider = ({ children }) => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
             if (!isMounted) return
 
+            console.log('Auth: AuthStateChange event:', event)
+
+            if (event === 'PASSWORD_RECOVERY') {
+                console.log('Auth: Password recovery detected, redirecting...')
+                window.location.href = '/reset-password'
+                return
+            }
+
             setSession(currentSession)
             if (currentSession?.user) {
                 if (currentSession.user.email?.toLowerCase().trim() === MASTER_ADMIN_EMAIL) {

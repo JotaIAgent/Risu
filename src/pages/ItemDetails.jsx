@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { ArrowLeft, Package, TrendingUp, Users, DollarSign, Calendar, Clock, Plus, Eye, AlertTriangle, ArrowDown } from 'lucide-react'
 import { useDialog } from '../components/DialogProvider'
+import PageTitle from '../components/PageTitle'
 
 export default function ItemDetails() {
     const { id } = useParams()
@@ -230,6 +231,7 @@ export default function ItemDetails() {
 
     return (
         <div className="max-w-5xl mx-auto space-y-8 pb-12">
+            <PageTitle title={`${item.name} | Detalhes`} />
             {/* Header */}
             <div className="flex items-center gap-4">
                 <button

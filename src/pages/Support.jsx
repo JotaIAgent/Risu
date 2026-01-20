@@ -3,6 +3,7 @@ import { MessageCircle, Clock, Lightbulb, ChevronRight, HelpCircle, ArrowLeft, S
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { useDialog } from '../components/DialogProvider'
+import PageTitle from '../components/PageTitle'
 
 export default function Support() {
     const { user } = useAuth()
@@ -496,6 +497,7 @@ export default function Support() {
 
     return (
         <div className="flex-1 flex flex-col p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+            <PageTitle title="Ajuda & Suporte" />
             <header className="mb-8">
                 <h1 className="text-3xl font-black text-[#13283b] uppercase tracking-tighter flex items-center gap-3">
                     <HelpCircle size={32} />

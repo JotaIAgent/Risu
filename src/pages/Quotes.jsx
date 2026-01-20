@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Plus, Trash2, FileText, Download, Eye, Send, CheckCircle, MessageCircle } from 'lucide-react'
 import { useDialog } from '../components/DialogProvider'
+import PageTitle from '../components/PageTitle'
 import { useAuth } from '../contexts/AuthContext'
 import { generateQuotePDF, generateContractPDF } from '../lib/pdfGenerator'
 import QuoteConversionModal from '../components/QuoteConversionModal'
@@ -477,6 +478,7 @@ export default function Quotes() {
 
     return (
         <div className="space-y-8 pb-12">
+            <PageTitle title="Orçamentos" />
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-3xl font-black text-text-primary-light dark:text-text-primary-dark tracking-tight">Orçamentos</h2>
