@@ -78,7 +78,6 @@ export default function Dashboard() {
             mostRented: null,
             leastRented: null
         },
-        chartData: [],
         insights: []
     })
 

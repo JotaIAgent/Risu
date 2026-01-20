@@ -365,8 +365,6 @@ export default function Quotes() {
                 event_date: quote.event_date,
                 event_end_date: quote.event_end_date,
                 total_value: quote.total_value,
-                shipping_cost: quote.shipping_cost,
-                discount: quote.discount,
                 obs: quote.obs,
                 payment_status: 'PENDING',
                 status: 'confirmed', // New active rental
