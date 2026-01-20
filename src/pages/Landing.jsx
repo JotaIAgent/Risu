@@ -302,11 +302,11 @@ export default function Landing() {
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
                     <img src={logoRisu} alt="Risu Logo" className="h-6 opacity-30 grayscale mix-blend-multiply" />
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                        &copy; 2026 Risu Tecnologia. Todos os direitos reservados.
+                        &copy; 2026 Risu. Todos os direitos reservados.
                     </p>
                     <div className="flex gap-6 opacity-40 text-[10px] font-black uppercase tracking-widest">
-                        <a href="#" className="hover:opacity-100">Termos</a>
-                        <a href="#" className="hover:opacity-100">Privacidade</a>
+                        <Link to="/terms" className="hover:opacity-100">Termos</Link>
+                        <Link to="/privacy" className="hover:opacity-100">Privacidade</Link>
                     </div>
                 </div>
             </footer >

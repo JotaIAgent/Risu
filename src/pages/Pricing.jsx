@@ -18,7 +18,7 @@ export default function Pricing() {
             period: 'mês',
             billingText: 'Cobrado mensalmente',
             highlight: false,
-            stripePriceId: 'price_1SqHrZJrvxBiHEjISBIjF1Xg'
+            stripePriceId: 'price_1SrlRiJJhUMtIbrzGII1XV4p'
         },
         {
             id: 'quarterly',
@@ -27,7 +27,7 @@ export default function Pricing() {
             period: 'mês',
             billingText: 'Cobrança única de R$ 269,70',
             highlight: false,
-            stripePriceId: 'price_1SqHtTJrvxBiHEjIgyTx6ECr'
+            stripePriceId: 'price_1SrlSGJJhUMtIbrzrSRoUlqe'
         },
         {
             id: 'semiannual',
@@ -36,7 +36,7 @@ export default function Pricing() {
             period: 'mês',
             billingText: 'Cobrança única de R$ 479,40',
             highlight: false,
-            stripePriceId: 'price_1SqHu6JrvxBiHEjIcFJOrE7Y'
+            stripePriceId: 'price_1SrlSbJJhUMtIbrzrfc4lgAP'
         },
         {
             id: 'annual',
@@ -46,7 +46,7 @@ export default function Pricing() {
             billingText: 'Cobrança única de R$ 838,80',
             highlight: true,
             badge: 'Mais Vantajoso',
-            stripePriceId: 'price_1SqHuVJrvxBiHEjIUNJCWLFm'
+            stripePriceId: 'price_1SrlSpJJhUMtIbrzz1j9kvqX'
         }
     ]
 
