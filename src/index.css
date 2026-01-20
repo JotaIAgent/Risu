@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: #137fec;
+  --color-primary-hover: #0b66c7;
+  --color-secondary: #10B981;
+  --color-danger: #EF4444;
+  --color-warning: #F59E0B;
+
+  --color-background-light: #f6f7f8;
+  --color-background-dark: #0f172a;
+
+  --color-surface-light: #FFFFFF;
+  --color-surface-dark: #1e293b;
+
+  --color-text-primary-light: #111827;
+  --color-text-primary-dark: #f8fafc;
+
+  --color-text-secondary-light: #64748b;
+  --color-text-secondary-dark: #94a3b8;
+
+  --color-border-light: #e2e8f0;
+  --color-border-dark: #334155;
+
+  --font-sans: "Inter", "system-ui", "-apple-system", "sans-serif";
+  --font-display: "Inter";
+
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+
+  --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+
+  body {
+    @apply bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark transition-colors duration-300;
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  .app-card {
+    @apply bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl shadow-soft overflow-visible transition-colors duration-300;
+  }
+
+  .app-table {
+    @apply w-full border-collapse text-left;
+  }
+
+  .app-table thead {
+    @apply bg-slate-50 dark:bg-slate-800/50 border-b border-border-light dark:border-border-dark;
+  }
+
+  .app-table th {
+    @apply p-4 font-semibold text-text-secondary-light dark:text-text-secondary-dark text-sm uppercase tracking-wider;
+  }
+
+  .app-table td {
+    @apply p-4 border-b border-border-light dark:border-border-dark align-middle;
+  }
+
+  .app-table tr {
+    @apply transition-colors duration-200 hover:bg-slate-50/50 dark:hover:bg-slate-800/30;
+  }
+
+  .app-input {
+    @apply w-full px-4 py-2 rounded-lg border border-border-light dark:border-border-dark bg-surface-light dark:bg-slate-800 text-text-primary-light dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all;
+  }
+
+  .app-select {
+    @apply w-full px-4 py-2 rounded-lg border border-border-light dark:border-border-dark bg-surface-light dark:bg-slate-800 text-text-primary-light dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none cursor-pointer;
+  }
+
+  .app-label {
+    @apply block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1;
+  }
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-500;
+}
+
+/* Google Translate Overrides */
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+}
+
+.goog-te-gadget-icon {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+body {
+  top: 0px !important;
+}
+
+html {
+  top: 0px !important;
+}
+
+/* Esconder a barra de ferramentas do Google que aparece no topo */
+.skiptranslate iframe {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Hide the original Google Translate combo box but keep it functional */
+.goog-te-combo {
+  opacity: 0;
+  height: 0;
+  width: 0;
+  overflow: hidden;
+  position: absolute;
+  pointer-events: none;
+}
