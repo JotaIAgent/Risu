@@ -47,11 +47,37 @@ export const AuthProvider = ({ children }) => {
                 return null
             }
 
-            const { data: subData } = await supabase
+            let { data: subData } = await supabase
                 .from('saas_subscriptions')
                 .select('status, plan_type, current_period_end, plan_name')
                 .eq('user_id', id)
                 .maybeSingle()
+
+            // FAILSAFE: If no subscription exists (and not master admin), create a 3-day trial
+            if (profileData && !subData && userEmail?.toLowerCase().trim() !== MASTER_ADMIN_EMAIL) {
+                const trialEnd = new Date()
+                trialEnd.setDate(trialEnd.getDate() + 3)
+
+                const { data: newSub, error: subError } = await supabase
+                    .from('saas_subscriptions')
+                    .insert([{
+                        user_id: id,
+                        status: 'trialing',
+                        plan_name: 'Período de Teste',
+                        current_period_end: trialEnd.toISOString(),
+                        billing_cycle: 'monthly',
+                        amount_cents: 9990
+                    }])
+                    .select('status, plan_type, current_period_end, plan_name')
+                    .single()
+
+                if (!subError && newSub) {
+                    console.log('Auth: Auto-created 3-day trial for user', id)
+                    subData = newSub
+                } else if (subError) {
+                    console.error('Auth: Failed to auto-create trial:', subError)
+                }
+            }
 
             if (profileData) {
                 // Determine actual access status

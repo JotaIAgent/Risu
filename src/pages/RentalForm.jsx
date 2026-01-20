@@ -284,6 +284,39 @@ export default function RentalForm() {
 
             if (itemsError) throw itemsError
 
+            // 3. Create Financial Transaction (if down payment exists)
+            const downPayment = parseFloat(formData.down_payment) || 0
+            if (downPayment > 0) {
+                try {
+                    // Fetch default business account
+                    const { data: accounts } = await supabase
+                        .from('accounts')
+                        .select('id')
+                        .eq('user_id', user.id)
+                        .eq('context', 'business')
+                        .eq('is_default', true)
+                        .single()
+
+                    const accountId = accounts?.id || null
+
+                    await supabase
+                        .from('financial_transactions')
+                        .insert([{
+                            user_id: user.id,
+                            type: 'income',
+                            category: 'Aluguel',
+                            amount: downPayment,
+                            description: `Entrada Aluguel #${rental.id.slice(0, 8)}`,
+                            date: new Date().toISOString().split('T')[0],
+                            rental_id: rental.id,
+                            client_id: formData.customerId,
+                            account_id: accountId
+                        }])
+                } catch (transError) {
+                    console.error('Error creating financial transaction:', transError)
+                }
+            }
+
             if (formData.sendWhatsapp && settings?.global_auto_send !== false && settings?.instance_name && EVOLUTION_URL) {
                 await sendWhatsappMessages(rental)
             }

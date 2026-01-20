@@ -13,7 +13,9 @@ import {
     Lock,
     MapPin,
     AlertCircle,
-    CreditCard as CardIcon
+    CreditCard,
+    Mail,
+    Phone
 } from 'lucide-react'
 import SubscriptionManager from '../components/SubscriptionManager'
 
@@ -102,38 +104,47 @@ export default function Settings() {
                 setProfileData(prev => ({ ...prev, ...profile }))
             }
 
-            // 2. Load Tenant Settings
-            const { data: settings } = await supabase
+            // 2. Load Tenant Settings (Company Data)
+            const { data: tenantSettings } = await supabase
                 .from('tenant_settings')
                 .select('*')
                 .eq('user_id', user.id)
                 .maybeSingle()
 
-            if (settings) {
+            if (tenantSettings) {
                 setCompanyData({
-                    company_name: settings.company_name || '',
-                    trading_name: settings.trading_name || '',
-                    cnpj_cpf: settings.cnpj_cpf || '',
-                    finance_email: settings.finance_email || '',
-                    responsible_name: settings.responsible_name || '',
-                    address: settings.address || {},
-                    primary_color: settings.primary_color || '#13283b',
-                    secondary_color: settings.secondary_color || '#f8fafc',
-                    display_name: settings.display_name || ''
+                    company_name: tenantSettings.company_name || '',
+                    trading_name: tenantSettings.trading_name || '',
+                    cnpj_cpf: tenantSettings.cnpj_cpf || '',
+                    finance_email: tenantSettings.finance_email || '',
+                    responsible_name: tenantSettings.responsible_name || '',
+                    address: tenantSettings.address || {},
+                    primary_color: tenantSettings.primary_color || '#13283b',
+                    secondary_color: tenantSettings.secondary_color || '#f8fafc',
+                    display_name: tenantSettings.display_name || ''
                 })
+            }
 
+            // 3. Load User Settings (Rental Rules & Notifications)
+            const { data: userSettings } = await supabase
+                .from('user_settings')
+                .select('*')
+                .eq('user_id', user.id)
+                .maybeSingle()
+
+            if (userSettings) {
                 setRentalData({
-                    default_pickup_time: settings.default_pickup_time || '09:00',
-                    default_return_time: settings.default_return_time || '18:00',
-                    late_fee_fixed: settings.late_fee_fixed || 0,
-                    late_fee_daily_percent: settings.late_fee_daily_percent || 0,
-                    security_deposit_enabled: settings.security_deposit_enabled || false,
-                    security_deposit_default: settings.security_deposit_default || 0,
-                    block_late_items: settings.block_late_items || false
+                    default_pickup_time: userSettings.default_pickup_time || '09:00',
+                    default_return_time: userSettings.default_return_time || '18:00',
+                    late_fee_fixed: userSettings.late_fee_value && userSettings.late_fee_type !== 'percent' ? userSettings.late_fee_value : 0,
+                    late_fee_daily_percent: userSettings.late_fee_value && userSettings.late_fee_type === 'percent' ? userSettings.late_fee_value : 0,
+                    security_deposit_enabled: userSettings.security_deposit_enabled || false,
+                    security_deposit_default: userSettings.security_deposit_default || 0,
+                    block_late_items: userSettings.block_late_items || false
                 })
 
-                if (settings.notification_preferences) {
-                    setNotificationData(prev => ({ ...prev, ...settings.notification_preferences }))
+                if (userSettings.notification_preferences) {
+                    setNotificationData(prev => ({ ...prev, ...userSettings.notification_preferences }))
                 }
             }
 
@@ -216,16 +227,31 @@ export default function Settings() {
         e.preventDefault()
         try {
             setLoading(true)
+
+            // Map the internal states to user_settings columns
+            const lateFeeValue = rentalData.late_fee_daily_percent > 0
+                ? parseFloat(rentalData.late_fee_daily_percent)
+                : parseFloat(rentalData.late_fee_fixed)
+
+            const lateFeeType = rentalData.late_fee_daily_percent > 0 ? 'percent' : 'fixed'
+
             const { error } = await supabase
-                .from('tenant_settings')
+                .from('user_settings')
                 .upsert({
                     user_id: user.id,
-                    ...rentalData
+                    default_pickup_time: rentalData.default_pickup_time,
+                    default_return_time: rentalData.default_return_time,
+                    late_fee_value: lateFeeValue,
+                    late_fee_type: lateFeeType,
+                    block_late_items: rentalData.block_late_items,
+                    security_deposit_enabled: rentalData.security_deposit_enabled,
+                    security_deposit_default: rentalData.security_deposit_default
                 })
 
             if (error) throw error
             success('Regras de locação atualizadas!')
         } catch (err) {
+            console.error(err)
             toastError('Erro ao salvar regras')
         } finally {
             setLoading(false)
@@ -236,7 +262,7 @@ export default function Settings() {
         try {
             setLoading(true)
             const { error } = await supabase
-                .from('tenant_settings')
+                .from('user_settings')
                 .upsert({
                     user_id: user.id,
                     notification_preferences: notificationData
@@ -297,7 +323,7 @@ export default function Settings() {
                             { id: 'company', label: 'Dados da Empresa', icon: Building2 },
                             { id: 'rental', label: 'Regras de Locação', icon: Clock },
                             { id: 'notifications', label: 'Notificações', icon: Bell },
-                            { id: 'subscription', label: 'Assinatura e Planos', icon: CardIcon },
+                            { id: 'subscription', label: 'Assinatura e Planos', icon: CreditCard },
                         ].map(item => (
                             <button
                                 key={item.id}
