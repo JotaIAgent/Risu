@@ -53,32 +53,10 @@ export const AuthProvider = ({ children }) => {
                 .eq('user_id', id)
                 .maybeSingle()
 
-            // FAILSAFE: If no subscription exists OR status is 'incomplete' (and not master admin), create/update to a 3-day trial
-            // Trial end is strictly 3 days after account creation
-            if (profileData && (!subData || subData.status === 'incomplete') && userEmail?.toLowerCase().trim() !== MASTER_ADMIN_EMAIL) {
-                const trialEnd = new Date(createdAt || new Date())
-                trialEnd.setDate(trialEnd.getDate() + 3)
-
-                const { data: newSub, error: subError } = await supabase
-                    .from('saas_subscriptions')
-                    .upsert([{
-                        user_id: id,
-                        status: 'trialing',
-                        plan_name: 'Período de Teste',
-                        current_period_end: trialEnd.toISOString(),
-                        billing_cycle: 'monthly',
-                        amount_cents: 9990
-                    }])
-                    .select('status, plan_type, current_period_end, plan_name')
-                    .single()
-
-                if (!subError && newSub) {
-                    console.log('Auth: Auto-created/fixed 3-day trial for user based on creation date', id)
-                    subData = newSub
-                } else if (subError) {
-                    console.error('Auth: Failed to auto-create/fix trial:', subError)
-                }
-            }
+            // NOTE: Client-side trial creation is disabled due to RLS.
+            // Trial creation is now handled by:
+            // 1. DB Trigger (public.handle_new_user)
+            // 2. Edge Function upsert (create-checkout)
 
             if (profileData) {
                 // Determine actual access status

@@ -27,11 +27,18 @@ serve(async (req: Request) => {
             })
         }
 
-        // 2. Initialize Supabase Client
+        // 2. Initialize Supabase Clients
+        // Client with user token for auth validation
         const supabaseClient = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
             Deno.env.get('SUPABASE_ANON_KEY') ?? '',
             { global: { headers: { Authorization: authHeader } } }
+        )
+
+        // Admin client to bypass RLS for subscription management
+        const supabaseAdmin = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
 
         // 3. Get User
@@ -59,8 +66,8 @@ serve(async (req: Request) => {
             apiVersion: '2023-10-16',
         })
 
-        // 5. Check if customer exists in DB
-        const { data: subscription, error: subFetchError } = await supabaseClient
+        // 5. Check if customer exists in DB - Using Admin to be sure
+        const { data: subscription, error: subFetchError } = await supabaseAdmin
             .from('saas_subscriptions')
             .select('stripe_customer_id')
             .eq('user_id', user.id)
@@ -85,8 +92,8 @@ serve(async (req: Request) => {
                 customerId = customer.id
                 console.log('Stripe customer created:', customerId)
 
-                // Save to DB (Upsert to ensure record exists)
-                const { error: upsertError } = await supabaseClient
+                // Save to DB (Upsert using ADMIN to bypass RLS)
+                const { error: upsertError } = await supabaseAdmin
                     .from('saas_subscriptions')
                     .upsert({
                         user_id: user.id,
@@ -95,13 +102,13 @@ serve(async (req: Request) => {
                     })
 
                 if (upsertError) {
-                    console.error('Failed to save customerId to DB:', upsertError)
+                    console.error('Failed to save customerId to DB (Admin):', upsertError)
                 } else {
-                    console.log('CustomerID saved to DB')
+                    console.log('CustomerID saved to DB (Admin)')
                 }
-            } catch (stripeErr) {
+            } catch (stripeErr: any) {
                 console.error('Stripe customer creation failed:', stripeErr)
-                throw new Error(`Stripe Customer Error: ${stripeErr.message}`)
+                throw new Error(`Stripe Customer Error: ${stripeErr.message || String(stripeErr)}`)
             }
         }
 
@@ -137,15 +144,23 @@ serve(async (req: Request) => {
                 JSON.stringify({ sessionId: session.id, url: session.url }),
                 { headers: { ...corsHeaders, "Content-Type": "application/json" } },
             )
-        } catch (checkoutErr) {
+        } catch (checkoutErr: any) {
             console.error('Stripe Checkout Error:', checkoutErr)
-            throw new Error(`Stripe Checkout Error: ${checkoutErr.message}`)
+            return new Response(JSON.stringify({
+                error: `Checkout Error: ${checkoutErr.message || String(checkoutErr)}`,
+                type: 'stripe_checkout_error',
+                details: checkoutErr
+            }), {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+                status: 400,
+            })
         }
     } catch (error) {
-        console.error('Function error caught in catch block:', error)
+        console.error('Function execution failed:', error)
         return new Response(JSON.stringify({
             error: error instanceof Error ? error.message : String(error),
-            details: error instanceof Error ? error.stack : undefined
+            type: 'runtime_error',
+            stack: error instanceof Error ? error.stack : undefined
         }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 400,

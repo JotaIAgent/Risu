@@ -18,7 +18,7 @@ export default function Pricing() {
             period: 'mês',
             billingText: 'Cobrado mensalmente',
             highlight: false,
-            stripePriceId: 'price_1SrlRiJJhUMtIbrzGII1XV4p'
+            stripePriceId: 'price_1SqHrZJrvxBiHEjISBIjF1Xg'
         },
         {
             id: 'quarterly',
@@ -27,7 +27,7 @@ export default function Pricing() {
             period: 'mês',
             billingText: 'Cobrança única de R$ 269,70',
             highlight: false,
-            stripePriceId: 'price_1SrlSGJJhUMtIbrzrSRoUlqe'
+            stripePriceId: 'price_1SqHtTJrvxBiHEIgyTx6ECr'
         },
         {
             id: 'semiannual',
@@ -36,7 +36,7 @@ export default function Pricing() {
             period: 'mês',
             billingText: 'Cobrança única de R$ 479,40',
             highlight: false,
-            stripePriceId: 'price_1SrlSbJJhUMtIbrzrfc4lgAP'
+            stripePriceId: 'price_1SqHu6JrvxBiHEjIcFJOrE7Y'
         },
         {
             id: 'annual',
@@ -46,7 +46,7 @@ export default function Pricing() {
             billingText: 'Cobrança única de R$ 838,80',
             highlight: true,
             badge: 'Mais Vantajoso',
-            stripePriceId: 'price_1SrlSpJJhUMtIbrzz1j9kvqX'
+            stripePriceId: 'price_1SqHuVJrvxBiHEjIUNJCWLFm'
         }
     ]
 
@@ -79,7 +79,21 @@ export default function Pricing() {
             if (data?.url) window.location.href = data.url
         } catch (error) {
             console.error('Error creating checkout:', error)
-            alert('Erro ao iniciar pagamento. Tente novamente.')
+            let message = 'Erro ao iniciar pagamento. Tente novamente.'
+
+            if (error.context && typeof error.context.json === 'function') {
+                try {
+                    const errorDetails = await error.context.json()
+                    console.error('Detailed Edge Function Error:', errorDetails)
+                    message = `Erro: ${errorDetails.error || errorDetails.message || message}`
+                } catch (e) {
+                    console.error('Could not parse error body:', e)
+                }
+            } else if (error.message) {
+                message = `Erro: ${error.message}`
+            }
+
+            alert(message)
         }
     }
 

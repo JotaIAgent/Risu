@@ -567,7 +567,7 @@ export default function AdminSubscribers() {
                                         <td className="px-8 py-6">
                                             <div className="flex flex-col">
                                                 <span className="text-[11px] font-black text-[#13283b] uppercase tracking-wider">
-                                                    {subscription.plan_type || subscription.billing_cycle || 'Mensal'}
+                                                    {subscription.plan_name || subscription.plan_type || subscription.billing_cycle || 'Mensal'}
                                                 </span>
                                                 <span className="text-[10px] font-bold text-green-600">
                                                     R$ {((subscription.custom_amount_cents || subscription.amount_cents || 0) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
