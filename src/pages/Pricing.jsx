@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Check, ShieldCheck, X, Star } from 'lucide-react'
+import { Check, ShieldCheck, X, Star, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
