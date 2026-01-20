@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
-    const fetchProfile = async (id, userEmail) => {
+    const fetchProfile = async (id, userEmail, createdAt) => {
         try {
             // OPTIMIZATION: If it's the master admin, we can set the role immediately 
             // and fetch the rest of the profile info in background
@@ -53,14 +53,15 @@ export const AuthProvider = ({ children }) => {
                 .eq('user_id', id)
                 .maybeSingle()
 
-            // FAILSAFE: If no subscription exists (and not master admin), create a 3-day trial
-            if (profileData && !subData && userEmail?.toLowerCase().trim() !== MASTER_ADMIN_EMAIL) {
-                const trialEnd = new Date()
+            // FAILSAFE: If no subscription exists OR status is 'incomplete' (and not master admin), create/update to a 3-day trial
+            // Trial end is strictly 3 days after account creation
+            if (profileData && (!subData || subData.status === 'incomplete') && userEmail?.toLowerCase().trim() !== MASTER_ADMIN_EMAIL) {
+                const trialEnd = new Date(createdAt || new Date())
                 trialEnd.setDate(trialEnd.getDate() + 3)
 
                 const { data: newSub, error: subError } = await supabase
                     .from('saas_subscriptions')
-                    .insert([{
+                    .upsert([{
                         user_id: id,
                         status: 'trialing',
                         plan_name: 'Período de Teste',
@@ -72,10 +73,10 @@ export const AuthProvider = ({ children }) => {
                     .single()
 
                 if (!subError && newSub) {
-                    console.log('Auth: Auto-created 3-day trial for user', id)
+                    console.log('Auth: Auto-created/fixed 3-day trial for user based on creation date', id)
                     subData = newSub
                 } else if (subError) {
-                    console.error('Auth: Failed to auto-create trial:', subError)
+                    console.error('Auth: Failed to auto-create/fix trial:', subError)
                 }
             }
 
@@ -145,7 +146,7 @@ export const AuthProvider = ({ children }) => {
                             clearTimeout(safetyTimeout)
                         }
                         // Non-blocking fetch
-                        fetchProfile(currentSession.user.id, currentSession.user.email)
+                        fetchProfile(currentSession.user.id, currentSession.user.email, currentSession.user.created_at)
                     }
                 }
             } catch (error) {
@@ -176,7 +177,7 @@ export const AuthProvider = ({ children }) => {
                 if (currentSession.user.email?.toLowerCase().trim() === MASTER_ADMIN_EMAIL) {
                     setLoading(false)
                 }
-                fetchProfile(currentSession.user.id, currentSession.user.email)
+                fetchProfile(currentSession.user.id, currentSession.user.email, currentSession.user.created_at)
             } else {
                 setProfile(null)
             }
@@ -218,7 +219,7 @@ export const AuthProvider = ({ children }) => {
         planType: profile?.plan_type,
         loading,
         signOut,
-        refreshProfile: () => session?.user ? fetchProfile(session.user.id, session.user.email) : null
+        refreshProfile: () => session?.user ? fetchProfile(session.user.id, session.user.email, session.user.created_at) : null
     }
 
     return (

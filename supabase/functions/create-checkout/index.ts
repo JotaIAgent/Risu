@@ -60,65 +60,93 @@ serve(async (req: Request) => {
         })
 
         // 5. Check if customer exists in DB
-        const { data: subscription } = await supabaseClient
+        const { data: subscription, error: subFetchError } = await supabaseClient
             .from('saas_subscriptions')
             .select('stripe_customer_id')
             .eq('user_id', user.id)
             .maybeSingle()
 
+        if (subFetchError) {
+            console.error('Subscription fetch error:', subFetchError)
+        }
+
         let customerId = subscription?.stripe_customer_id
 
         // 6. Create Stripe Customer if not exists
         if (!customerId) {
-            console.log('Creating new Stripe customer for:', user.email)
-            const customer = await stripe.customers.create({
-                email: user.email,
-                metadata: {
-                    supabase_user_id: user.id
-                }
-            })
-            customerId = customer.id
+            console.log('No customerId found, creating new Stripe customer for:', user.email)
+            try {
+                const customer = await stripe.customers.create({
+                    email: user.email,
+                    metadata: {
+                        supabase_user_id: user.id
+                    }
+                })
+                customerId = customer.id
+                console.log('Stripe customer created:', customerId)
 
-            // Save to DB
-            await supabaseClient
-                .from('saas_subscriptions')
-                .update({ stripe_customer_id: customerId })
-                .eq('user_id', user.id)
+                // Save to DB (Upsert to ensure record exists)
+                const { error: upsertError } = await supabaseClient
+                    .from('saas_subscriptions')
+                    .upsert({
+                        user_id: user.id,
+                        stripe_customer_id: customerId,
+                        status: subscription?.status || 'incomplete'
+                    })
+
+                if (upsertError) {
+                    console.error('Failed to save customerId to DB:', upsertError)
+                } else {
+                    console.log('CustomerID saved to DB')
+                }
+            } catch (stripeErr) {
+                console.error('Stripe customer creation failed:', stripeErr)
+                throw new Error(`Stripe Customer Error: ${stripeErr.message}`)
+            }
         }
 
-        console.log('Customer ID:', customerId)
+        console.log('Using Customer ID:', customerId)
+        console.log('Price ID:', priceId)
 
         // 7. Create Checkout Session
-        const session = await stripe.checkout.sessions.create({
-            customer: customerId,
-            line_items: [
-                {
-                    price: priceId,
-                    quantity: 1,
-                },
-            ],
-            mode: 'subscription',
-            success_url: successUrl,
-            cancel_url: cancelUrl,
-            metadata: {
-                supabase_user_id: user.id
-            },
-            subscription_data: {
+        try {
+            const session = await stripe.checkout.sessions.create({
+                customer: customerId,
+                line_items: [
+                    {
+                        price: priceId,
+                        quantity: 1,
+                    },
+                ],
+                mode: 'subscription',
+                success_url: successUrl,
+                cancel_url: cancelUrl,
                 metadata: {
                     supabase_user_id: user.id
+                },
+                subscription_data: {
+                    metadata: {
+                        supabase_user_id: user.id
+                    }
                 }
-            }
-        })
+            })
 
-        console.log('Checkout session created:', session.id)
+            console.log('Checkout session created:', session.id)
 
-        return new Response(
-            JSON.stringify({ sessionId: session.id, url: session.url }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        )
+            return new Response(
+                JSON.stringify({ sessionId: session.id, url: session.url }),
+                { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            )
+        } catch (checkoutErr) {
+            console.error('Stripe Checkout Error:', checkoutErr)
+            throw new Error(`Stripe Checkout Error: ${checkoutErr.message}`)
+        }
     } catch (error) {
-        console.error('Function error:', error)
-        return new Response(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }), {
+        console.error('Function error caught in catch block:', error)
+        return new Response(JSON.stringify({
+            error: error instanceof Error ? error.message : String(error),
+            details: error instanceof Error ? error.stack : undefined
+        }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 400,
         })
