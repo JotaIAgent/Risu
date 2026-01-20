@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { Plus, Trash2, CheckCircle, XCircle, FileText, Download, Clock, FileCheck, Eye, Search, AlertTriangle } from 'lucide-react'
 import { useDialog } from '../components/DialogProvider'
 import RentalReturnModal from '../components/RentalReturnModal'
+import PageTitle from '../components/PageTitle'
 
 export default function Rentals() {
     const [rentals, setRentals] = useState([])
@@ -193,6 +194,7 @@ export default function Rentals() {
 
     return (
         <div className="space-y-8 pb-12">
+            <PageTitle title="Aluguéis" />
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-3xl font-black text-text-primary-light dark:text-text-primary-dark tracking-tight">Locações</h2>

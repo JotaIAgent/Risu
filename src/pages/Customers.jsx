@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Plus, Edit, Trash2, Eye, Crown, Trophy, History, Filter, DollarSign, Clock, AlertCircle, CheckCircle, Search, MessageCircle, Calendar } from 'lucide-react'
 import { useDialog } from '../components/DialogProvider'
+import PageTitle from '../components/PageTitle'
 
 export default function Customers() {
     const [customers, setCustomers] = useState([])
@@ -138,6 +139,7 @@ export default function Customers() {
 
     return (
         <div className="space-y-8 pb-12">
+            <PageTitle title="Clientes" />
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-3xl font-black text-text-primary-light dark:text-text-primary-dark tracking-tight">Clientes</h2>

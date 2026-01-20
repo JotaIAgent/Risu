@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Plus, Edit, Trash2, Eye, Package, Clock, AlertTriangle, Hammer, Wrench } from 'lucide-react'
 import { useDialog } from '../components/DialogProvider'
+import PageTitle from '../components/PageTitle'
 
 export default function Inventory() {
     const [searchParams] = useSearchParams()
@@ -351,6 +352,7 @@ export default function Inventory() {
 
     return (
         <div className="space-y-8 pb-12">
+            <PageTitle title="Estoque" />
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex flex-col gap-4">
                     <div>

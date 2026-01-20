@@ -8,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCont
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import { isSameDay, parseISO } from 'date-fns'
+import PageTitle from '../components/PageTitle'
 
 export default function Dashboard() {
     const navigate = useNavigate()
@@ -488,6 +489,7 @@ export default function Dashboard() {
 
     return (
         <div className="space-y-8 pb-12">
+            <PageTitle title="Dashboard" />
             {error && <div className="bg-red-500 text-white p-4 mb-4 rounded">{error}</div>}
 
             {/* ... Alerts, Financials, Stock, Agenda, Highlights ... */}
