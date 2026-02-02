@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@14.14.0?target=deno'
+import { PaymentProviderFactory } from '../_shared/gateway_adapters.ts'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -15,7 +15,7 @@ const PLAN_MAPPING: Record<string, string> = {
     'price_1SqHuVJrvxBiHEjIUNJCWLFm': 'Risu Anual',
 }
 
-console.log("Get Billing Info v3.0 - Full Automation (State Detector)")
+console.log("Get Billing Info v4.0 - Multi-Gateway Architecture")
 
 serve(async (req: Request) => {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -28,87 +28,105 @@ serve(async (req: Request) => {
 
         const serviceClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
         const { data: sub } = await serviceClient.from('saas_subscriptions').select('*').eq('user_id', user.id).maybeSingle()
-        if (!sub?.stripe_customer_id) return new Response(JSON.stringify({ planName: 'Sem Assinatura', subscriptionStatus: 'none', invoices: [], events: [] }), { status: 200, headers: corsHeaders })
 
-        const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, { apiVersion: '2023-10-16' })
+        if (!sub?.gateway_customer_id) {
+            return new Response(JSON.stringify({ planName: 'Sem Assinatura', subscriptionStatus: 'none', invoices: [], events: [] }), { status: 200, headers: corsHeaders })
+        }
+
+        const provider = PaymentProviderFactory.getProvider(sub.gateway_name);
 
         let planName = sub.plan_name || 'Risu Mensal'
         let status = sub.status
         let nextBillingDate = sub.current_period_end
 
-        if (sub.stripe_subscription_id) {
-            const stripeSub = await stripe.subscriptions.retrieve(sub.stripe_subscription_id, { expand: ['items.data.price.product'] })
-            status = stripeSub.status
-            nextBillingDate = new Date(stripeSub.current_period_end * 1000).toISOString()
+        if (sub.gateway_subscription_id) {
+            try {
+                const gatewaySub = await provider.getSubscriptionStatus(sub.gateway_subscription_id);
 
-            const priceId = stripeSub.items?.data?.[0]?.price?.id
-            const prodName = (stripeSub.items?.data?.[0]?.price?.product as any)?.name
+                // Stripe specific normalization (can be moved to adapter later if needed)
+                if (sub.gateway_name === 'stripe') {
+                    status = gatewaySub.status
+                    nextBillingDate = new Date(gatewaySub.current_period_end * 1000).toISOString()
+                    const priceId = gatewaySub.items?.data?.[0]?.price?.id
+                    planName = (priceId ? PLAN_MAPPING[priceId] : null) || gatewaySub.items?.data?.[0]?.price?.product?.name || planName
+                } else {
+                    // Generic handling for other gateways
+                    status = gatewaySub.status || status
+                }
 
-            // Standardize name: Mapping -> Product Name -> Catch 'Risu' -> Fallback
-            planName = (priceId ? PLAN_MAPPING[priceId] : null) || prodName || 'Risu Mensal'
-            if (planName === 'Risu') planName = 'Risu Mensal'
+                // --- STATE CHANGE DETECTOR ---
+                const { data: lastEvents } = await serviceClient
+                    .from('subscription_events')
+                    .select('event_type')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
 
-            // --- STATE CHANGE DETECTOR (The Automation Engine) ---
-            const { data: lastEvents } = await serviceClient
-                .from('subscription_events')
-                .select('event_type')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
-                .limit(1)
+                const lastType = lastEvents?.[0]?.event_type
+                let eventToLog = null
+                let eventDesc = ''
 
-            const lastType = lastEvents?.[0]?.event_type
-            let eventToLog = null
-            let eventDesc = ''
+                // Case-specific logic (currently mostly Stripe-tailored, but generic enough)
+                if (status === 'active' && lastType === 'canceled') {
+                    eventToLog = 'reactivated'
+                    eventDesc = 'Assinatura reativada com sucesso.'
+                } else if (status === 'canceled' && lastType !== 'canceled') {
+                    eventToLog = 'canceled'
+                    eventDesc = 'Sua assinatura foi cancelada.'
+                }
 
-            // Case A: Reactivation (Stripe is active, but last event was a cancellation)
-            if (status === 'active' && !stripeSub.cancel_at_period_end && (lastType === 'canceled' || lastType === 'cancellation_scheduled')) {
-                eventToLog = 'reactivated'
-                eventDesc = 'Assinatura reativada com sucesso direto pela Stripe.'
+                if (eventToLog) {
+                    await serviceClient.from('subscription_events').insert({
+                        user_id: user.id,
+                        event_type: eventToLog,
+                        description: eventDesc,
+                        plan_name: planName
+                    })
+                }
+
+                // Sync Database
+                await serviceClient.from('saas_subscriptions').update({
+                    status: status,
+                    plan_name: planName,
+                    current_period_end: nextBillingDate,
+                    updated_at: new Date().toISOString()
+                }).eq('user_id', user.id)
+            } catch (err) {
+                console.error('Error fetching gateway subscription info:', err);
             }
-            // Case B: Scheduled Cancellation (User clicked cancel in portal)
-            else if (stripeSub.cancel_at_period_end && lastType !== 'cancellation_scheduled') {
-                eventToLog = 'cancellation_scheduled'
-                eventDesc = `Cancelamento agendado para ${new Date(stripeSub.current_period_end * 1000).toLocaleDateString('pt-BR')}.`
-            }
-            // Case C: Final Cancellation (Subscription is now marked as canceled)
-            else if (status === 'canceled' && lastType !== 'canceled') {
-                eventToLog = 'canceled'
-                eventDesc = 'Sua assinatura foi cancelada conforme solicitado.'
-            }
-
-            if (eventToLog) {
-                console.log(`Auto-logging event: ${eventToLog} for user: ${user.id}`)
-                await serviceClient.from('subscription_events').insert({
-                    user_id: user.id,
-                    event_type: eventToLog,
-                    description: eventDesc,
-                    plan_name: planName
-                })
-            }
-
-            // Sync Database with Service Role
-            await serviceClient.from('saas_subscriptions').update({
-                status: status,
-                plan_name: planName,
-                current_period_end: nextBillingDate,
-                updated_at: new Date().toISOString()
-            }).eq('user_id', user.id)
         }
 
-        const invoices = await stripe.invoices.list({ customer: sub.stripe_customer_id, limit: 10 })
+        const gatewayInvoices = await provider.getInvoices(sub.gateway_customer_id);
         const dbEvents = await serviceClient.from('subscription_events').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10)
+
+        // Normalize invoices for the frontend
+        const normalizedInvoices = gatewayInvoices.map((i: any) => {
+            if (sub.gateway_name === 'stripe') {
+                return {
+                    id: i.id,
+                    amount: i.amount_paid / 100,
+                    created: new Date(i.created * 1000).toISOString(),
+                    description: i.lines?.data?.[0]?.description || planName,
+                    pdfUrl: i.invoice_pdf
+                };
+            }
+            if (sub.gateway_name === 'asaas') {
+                return {
+                    id: i.id,
+                    amount: i.value,
+                    created: i.dateCreated ? new Date(i.dateCreated).toISOString() : new Date().toISOString(),
+                    description: i.description || planName,
+                    pdfUrl: i.invoiceUrl || i.bankSlipUrl
+                };
+            }
+            return i;
+        });
 
         return new Response(JSON.stringify({
             planName,
             subscriptionStatus: status,
             nextBillingDate,
-            invoices: invoices.data.map((i: any) => ({
-                id: i.id,
-                amount: i.amount_paid / 100,
-                created: new Date(i.created * 1000).toISOString(),
-                description: i.lines?.data?.[0]?.description || planName,
-                pdfUrl: i.invoice_pdf
-            })),
+            invoices: normalizedInvoices,
             events: dbEvents.data?.map((e: any) => ({
                 id: e.id,
                 type: 'event',

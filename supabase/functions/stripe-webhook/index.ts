@@ -54,7 +54,7 @@ serve(async (req: Request) => {
             const { data } = await supabase
                 .from('saas_subscriptions')
                 .select('user_id')
-                .eq('stripe_subscription_id', subscriptionId)
+                .eq('gateway_subscription_id', subscriptionId)
                 .maybeSingle()
             return data?.user_id
         }
@@ -85,8 +85,9 @@ serve(async (req: Request) => {
                         .from('saas_subscriptions')
                         .update({
                             status: 'active',
-                            stripe_customer_id: stripeCustomerId,
-                            stripe_subscription_id: stripeSubscriptionId,
+                            gateway_customer_id: stripeCustomerId,
+                            gateway_subscription_id: stripeSubscriptionId,
+                            gateway_name: 'stripe',
                             plan_name: planInfo.name,
                             billing_cycle: planInfo.billing_cycle,
                             amount_cents: planInfo.amount_cents,
@@ -127,8 +128,9 @@ serve(async (req: Request) => {
                                 .from('saas_subscriptions')
                                 .update({
                                     status: 'active',
-                                    stripe_customer_id: stripeCustomerId,
-                                    stripe_subscription_id: stripeSubscriptionId,
+                                    gateway_customer_id: stripeCustomerId,
+                                    gateway_subscription_id: stripeSubscriptionId,
+                                    gateway_name: 'stripe',
                                     plan_name: planInfo.name,
                                     billing_cycle: planInfo.billing_cycle,
                                     amount_cents: planInfo.amount_cents,
@@ -186,7 +188,7 @@ serve(async (req: Request) => {
                 await supabase
                     .from('saas_subscriptions')
                     .update(updateData)
-                    .eq('stripe_subscription_id', subscription.id)
+                    .eq('gateway_subscription_id', subscription.id)
 
                 // Log cancellation request or reactivation
                 const userId = await getUserBySubscriptionId(subscription.id)
@@ -228,7 +230,7 @@ serve(async (req: Request) => {
                         status: 'canceled',
                         updated_at: new Date().toISOString()
                     })
-                    .eq('stripe_subscription_id', subscription.id)
+                    .eq('gateway_subscription_id', subscription.id)
 
                 // Log cancellation
                 if (userId) {
@@ -254,7 +256,7 @@ serve(async (req: Request) => {
                             status: 'active',
                             updated_at: new Date().toISOString()
                         })
-                        .eq('stripe_subscription_id', invoice.subscription)
+                        .eq('gateway_subscription_id', invoice.subscription)
 
                     // Log payment if it's a recurring payment (not first payment)
                     if (invoice.billing_reason === 'subscription_cycle') {
@@ -284,7 +286,7 @@ serve(async (req: Request) => {
                             status: 'past_due',
                             updated_at: new Date().toISOString()
                         })
-                        .eq('stripe_subscription_id', invoice.subscription)
+                        .eq('gateway_subscription_id', invoice.subscription)
 
                     // Log payment failure
                     const userId = await getUserBySubscriptionId(invoice.subscription)
