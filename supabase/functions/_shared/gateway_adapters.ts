@@ -128,6 +128,9 @@ export class ASAASProvider implements PaymentProvider {
 
         const config = ASAAS_PLAN_CONFIGS[params.priceId] || { name: 'Assinatura Risu', value: 99.90, cycle: 'MONTHLY' };
 
+        // ASAAS doesn't like Stripe placeholders like {CHECKOUT_SESSION_ID}
+        const cleanSuccessUrl = params.successUrl.replace('{CHECKOUT_SESSION_ID}', 'asaas_success');
+
         // We use Payment Links for the Checkout experience
         const data = await this.request('POST', '/paymentLinks', {
             name: config.name,
@@ -138,7 +141,7 @@ export class ASAASProvider implements PaymentProvider {
             value: config.value,
             dueDateLimitDays: 3,
             callback: {
-                successUrl: params.successUrl,
+                successUrl: cleanSuccessUrl,
                 autoRedirect: true
             }
         });
