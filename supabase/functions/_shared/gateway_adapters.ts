@@ -173,7 +173,10 @@ export class ASAASProvider implements PaymentProvider {
  */
 export class PaymentProviderFactory {
     static getProvider(name?: string): PaymentProvider {
-        const activeGateway = (name || Deno.env.get('ACTIVE_GATEWAY') || 'stripe').toLowerCase() as GatewayName;
+        const envGateway = Deno.env.get('ACTIVE_GATEWAY');
+        const activeGateway = (name || envGateway || 'stripe').toLowerCase() as GatewayName;
+
+        console.log(`[Factory] Selected Gateway: ${activeGateway} (Source: ${name ? 'arg' : envGateway ? 'env' : 'default'})`);
 
         switch (activeGateway) {
             case 'stripe':

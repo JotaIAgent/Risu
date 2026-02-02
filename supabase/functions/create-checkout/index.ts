@@ -55,12 +55,13 @@ serve(async (req: Request) => {
             .single()
 
         // Initialize Payment Provider via Factory
+        const activeGatewayName = (Deno.env.get('ACTIVE_GATEWAY') || 'stripe').toLowerCase()
         const provider = PaymentProviderFactory.getProvider();
 
-        // 5. Check if customer exists in DB
+        // 5. Check if customer exists in DB for the ACTIVE gateway
         const { data: subscription, error: subFetchError } = await supabaseAdmin
             .from('saas_subscriptions')
-            .select('gateway_customer_id, gateway_name')
+            .select('gateway_customer_id, gateway_name, status')
             .eq('user_id', user.id)
             .maybeSingle()
 
@@ -68,11 +69,14 @@ serve(async (req: Request) => {
             console.error('Subscription fetch error:', subFetchError)
         }
 
-        let customerId = subscription?.gateway_customer_id
+        // We only reuse the customerId if the gateway matches
+        let customerId = (subscription?.gateway_name === activeGatewayName)
+            ? subscription?.gateway_customer_id
+            : null
 
-        // 6. Create Customer if not exists
+        // 6. Create Customer if not exists or if gateway changed
         if (!customerId) {
-            console.log('No customerId found, creating new customer via provider for:', user.email)
+            console.log(`No customerId for ${activeGatewayName} found, creating new customer via provider for:`, user.email)
             try {
                 customerId = await provider.createCustomer(
                     user.email!,
@@ -83,13 +87,13 @@ serve(async (req: Request) => {
 
                 console.log('Provider customer created:', customerId)
 
-                // Save to DB
+                // Save to DB (update the gateway_name to match)
                 const { error: upsertError } = await supabaseAdmin
                     .from('saas_subscriptions')
                     .upsert({
                         user_id: user.id,
                         gateway_customer_id: customerId,
-                        gateway_name: Deno.env.get('ACTIVE_GATEWAY') || 'stripe',
+                        gateway_name: activeGatewayName,
                         status: subscription?.status || 'incomplete'
                     })
 
