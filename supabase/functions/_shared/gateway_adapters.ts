@@ -136,6 +136,7 @@ export class ASAASProvider implements PaymentProvider {
             chargeType: 'RECURRENT',
             subscriptionCycle: config.cycle,
             value: config.value,
+            dueDateLimitDays: 3,
             callback: {
                 successUrl: params.successUrl,
                 autoRedirect: true
