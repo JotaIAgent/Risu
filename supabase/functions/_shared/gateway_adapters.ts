@@ -135,7 +135,7 @@ export class ASAASProvider implements PaymentProvider {
         const data = await this.request('POST', '/paymentLinks', {
             name: config.name,
             description: `Plano ${config.name} - Gestão de Aluguel`,
-            billingType: 'UNDEFINED', // Allows Credit Card and Pix
+            billingType: 'UNDEFINED', // This should allow Pix, Card and Boleto
             chargeType: 'RECURRENT',
             subscriptionCycle: config.cycle,
             value: config.value,
