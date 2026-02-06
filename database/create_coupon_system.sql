@@ -6,7 +6,7 @@
 CREATE TABLE IF NOT EXISTS public.saas_coupons (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code TEXT UNIQUE NOT NULL,
-    type TEXT NOT NULL CHECK (type IN ('percentage', 'fixed_value')),
+    type TEXT NOT NULL CHECK (type IN ('percentage', 'fixed')),
     value DECIMAL(10, 2) NOT NULL,
     valid_from TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     valid_until TIMESTAMP WITH TIME ZONE,
@@ -46,7 +46,10 @@ CREATE POLICY "Admins can manage coupons"
 ON public.saas_coupons 
 TO authenticated
 USING ( 
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND account_type = 'admin')
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+)
+WITH CHECK (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
 -- Users can only read active coupons (for validation)
@@ -62,7 +65,7 @@ ON public.saas_coupon_usages
 FOR SELECT 
 TO authenticated
 USING ( 
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND account_type = 'admin')
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
 CREATE POLICY "Users can view their own coupon usage" 
