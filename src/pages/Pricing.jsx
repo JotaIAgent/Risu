@@ -159,7 +159,7 @@ export default function Pricing() {
                             </ul>
 
                             <button
-                                onClick={() => handleSubscribe(plan.stripePriceId)}
+                                onClick={() => handleSubscribe(plan.id)}
                                 className="w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-105 bg-white text-[#13283b] hover:bg-blue-50"
                             >
                                 {user ? 'Assinar Agora' : 'Cadastrar'}
