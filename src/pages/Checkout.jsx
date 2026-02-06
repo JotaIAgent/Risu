@@ -126,10 +126,23 @@ export default function Checkout() {
                 }
             })
 
-            if (functionError) throw functionError
+            console.log('Response from Edge Function:', { data, functionError })
+
+            if (functionError) {
+                // Supabase.invoke error might contain the body in a context-specific way
+                // for some versions/environments. Let's try to extract it.
+                let messageValue = functionError.message
+                try {
+                    const errorDetails = await functionError.context?.json()
+                    if (errorDetails?.error) messageValue = errorDetails.error
+                } catch { /* ignore */ }
+
+                throw new Error(messageValue)
+            }
+
             if (data?.url) window.location.href = data.url
         } catch (err) {
-            console.error('Error starting checkout:', err)
+            console.error('Detailed Error starting checkout:', err)
             setError(err.message || 'Erro ao iniciar checkout. Tente novamente.')
             setIsLoading(false)
         }
@@ -188,8 +201,8 @@ export default function Checkout() {
                                             onClick={appliedCoupon ? () => setAppliedCoupon(null) : handleApplyCoupon}
                                             disabled={isValidatingCoupon || (!couponCode && !appliedCoupon)}
                                             className={`px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${appliedCoupon
-                                                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                                                    : 'bg-[#13283b] text-white hover:opacity-90'
+                                                ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                                                : 'bg-[#13283b] text-white hover:opacity-90'
                                                 }`}
                                         >
                                             {isValidatingCoupon ? <Loader2 size={16} className="animate-spin mx-auto" /> : (appliedCoupon ? 'Remover' : 'Aplicar')}
