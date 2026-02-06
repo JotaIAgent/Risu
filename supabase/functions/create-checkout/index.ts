@@ -48,12 +48,22 @@ serve(async (req: Request) => {
 
         console.log('User authenticated:', user.email)
 
+        // Diagnostics
+        const activeGatewayName = (Deno.env.get('ACTIVE_GATEWAY') || 'stripe').toLowerCase()
+        const hasAsaasKey = !!Deno.env.get('ASAAS_API_KEY')
+        const hasStripeKey = !!Deno.env.get('STRIPE_SECRET_KEY')
+
+        console.log(`Diagnostics: Gateway=${activeGatewayName}, AsaasKey=${hasAsaasKey}, StripeKey=${hasStripeKey}`)
+
         // Fetch User Profile for tax_id and full_name
-        const { data: profile } = await supabaseAdmin
+        const { data: profile, error: profileErr } = await supabaseAdmin
             .from('profiles')
             .select('tax_id, full_name')
             .eq('id', user.id)
-            .single()
+            .maybeSingle()
+
+        if (profileErr) console.error('Profile fetch error:', profileErr)
+        console.log('Profile found:', !!profile, 'TaxID:', !!profile?.tax_id)
 
         // 7. Coupon Validation
         let customAmount: number | undefined = undefined;
@@ -104,7 +114,6 @@ serve(async (req: Request) => {
         }
 
         // Initialize Payment Provider via Factory
-        const activeGatewayName = (Deno.env.get('ACTIVE_GATEWAY') || 'stripe').toLowerCase()
         const provider = PaymentProviderFactory.getProvider();
 
         // 5. Check if customer exists in DB for the ACTIVE gateway

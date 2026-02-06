@@ -161,6 +161,31 @@ export default function AdminCoupons() {
         }
     }
 
+    const handleDelete = async (id) => {
+        if (!confirm('Tem certeza que deseja excluir este cupom? Esta ação não pode ser desfeita.')) return
+
+        try {
+            setLoading(true)
+            const { error } = await supabase
+                .from('saas_coupons')
+                .delete()
+                .eq('id', id)
+
+            if (error) {
+                if (error.code === '23503') {
+                    throw new Error('Este cupom não pode ser excluído pois já possui histórico de uso. Tente desativá-lo em vez de excluir.')
+                }
+                throw error
+            }
+
+            fetchCoupons()
+        } catch (err) {
+            alert('Erro ao excluir cupom: ' + err.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
     return (
         <div className="space-y-12 w-full text-[#13283b]">
             <header className="flex justify-between items-end">
@@ -265,12 +290,22 @@ export default function AdminCoupons() {
                                         </button>
                                     </td>
                                     <td className="px-8 py-6 text-right">
-                                        <button
-                                            onClick={() => handleOpenModal(coupon)}
-                                            className="p-2 hover:bg-[#13283b] hover:text-white rounded-xl transition-all"
-                                        >
-                                            <Edit2 size={16} />
-                                        </button>
+                                        <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={() => handleOpenModal(coupon)}
+                                                className="p-2 hover:bg-[#13283b] hover:text-white rounded-xl transition-all"
+                                                title="Editar"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(coupon.id)}
+                                                className="p-2 hover:bg-red-500 hover:text-white rounded-xl transition-all text-red-500"
+                                                title="Excluir"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
