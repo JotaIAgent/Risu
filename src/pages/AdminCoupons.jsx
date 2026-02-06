@@ -41,15 +41,25 @@ export default function AdminCoupons() {
     const fetchCoupons = async () => {
         try {
             setLoading(true)
-            const { data, error } = await supabase
+
+            // 1. Fetch Coupons
+            const { data: couponsData, error: couponsError } = await supabase
                 .from('saas_coupons')
-                .select('*, saas_coupon_usages(discount_amount)')
+                .select('*')
                 .order('created_at', { ascending: false })
 
-            if (error) throw error
+            if (couponsError) throw couponsError
 
-            const processed = data.map(c => {
-                const usages = c.saas_coupon_usages || []
+            // 2. Fetch all usages to calculate stats
+            const { data: usagesData, error: usagesError } = await supabase
+                .from('saas_coupon_usages')
+                .select('coupon_id, discount_amount')
+
+            if (usagesError) throw usagesError
+
+            // 3. Process data in memory
+            const processed = couponsData.map(c => {
+                const usages = usagesData.filter(u => u.coupon_id === c.id)
                 const usageCount = usages.length
                 const totalDiscount = usages.reduce((sum, u) => sum + (u.discount_amount || 0), 0)
                 return { ...c, usageCount, totalDiscount }
@@ -57,11 +67,11 @@ export default function AdminCoupons() {
 
             setCoupons(processed)
 
-            // Stats calc
+            // 4. Stats calc
             setStats({
-                activeCount: data.filter(c => c.is_active).length,
-                totalUsages: processed.reduce((sum, c) => sum + c.usageCount, 0),
-                totalDiscounted: processed.reduce((sum, c) => sum + c.totalDiscount, 0)
+                activeCount: couponsData.filter(c => c.is_active).length,
+                totalUsages: usagesData.length,
+                totalDiscounted: usagesData.reduce((sum, u) => sum + (u.discount_amount || 0), 0)
             })
         } catch (err) {
             console.error('Error fetching coupons:', err)
