@@ -160,6 +160,7 @@ serve(async (req: Request) => {
 
         // 7. Create Checkout Session / URL
         try {
+            console.log('Final step: Creating checkout session with:', { customerId, priceId, customAmount });
             const result = await provider.createCheckout({
                 customerId,
                 priceId,
@@ -172,10 +173,7 @@ serve(async (req: Request) => {
                 }
             })
 
-            console.log('Checkout session created:', result.sessionId)
-
-            // If a coupon was applied, log it as a pending usage in metadata or similar
-            // Actually, we increment usage on webhook confirmation.
+            console.log('Checkout session created successfully');
 
             return new Response(
                 JSON.stringify({
@@ -187,20 +185,19 @@ serve(async (req: Request) => {
                 { headers: { ...corsHeaders, "Content-Type": "application/json" } },
             )
         } catch (checkoutErr: any) {
-            console.error('Checkout Error:', checkoutErr)
+            console.error('Checkout Error (Caught):', checkoutErr)
             return new Response(JSON.stringify({
-                error: `Checkout Error: ${checkoutErr.message || String(checkoutErr)}`,
-                type: 'checkout_error',
-                details: checkoutErr
+                error: checkoutErr.message || String(checkoutErr),
+                type: 'checkout_error'
             }), {
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
                 status: 400,
             })
         }
-    } catch (error) {
-        console.error('Function execution failed:', error)
+    } catch (error: any) {
+        console.error('General Runtime Error:', error)
         return new Response(JSON.stringify({
-            error: error instanceof Error ? error.message : String(error),
+            error: error.message || String(error),
             type: 'runtime_error'
         }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },

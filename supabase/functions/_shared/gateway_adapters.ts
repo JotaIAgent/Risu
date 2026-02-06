@@ -27,6 +27,7 @@ export class StripeProvider implements PaymentProvider {
         priceId: string;
         successUrl: string;
         cancelUrl: string;
+        customAmount?: number;
         metadata?: Record<string, any>;
     }): Promise<{ url: string; sessionId: string; gateway: string }> {
         const session = await this.stripe.checkout.sessions.create({
@@ -130,12 +131,13 @@ export class ASAASProvider implements PaymentProvider {
         priceId: string;
         successUrl: string;
         cancelUrl: string;
+        customAmount?: number;
         metadata?: Record<string, any>;
     }): Promise<{ url: string; sessionId: string; gateway: string }> {
         console.log('ASAAS: Creating checkout for', params.customerId);
 
         const config = ASAAS_PLAN_CONFIGS[params.priceId] || { name: 'Assinatura Risu', value: 99.90, cycle: 'MONTHLY' };
-        const finalValue = params.customAmount ?? config.value;
+        const finalValue = params.customAmount !== undefined ? params.customAmount : config.value;
 
         // ASAAS doesn't like Stripe placeholders like {CHECKOUT_SESSION_ID}
         const cleanSuccessUrl = params.successUrl.replace('{CHECKOUT_SESSION_ID}', 'asaas_success');
