@@ -43,7 +43,7 @@ export default function AdminCoupons() {
             setLoading(true)
             const { data, error } = await supabase
                 .from('saas_coupons')
-                .select('*, saas_coupon_usages(count, discount_amount)')
+                .select('*, saas_coupon_usages(discount_amount)')
                 .order('created_at', { ascending: false })
 
             if (error) throw error
@@ -247,8 +247,8 @@ export default function AdminCoupons() {
                                         <button
                                             onClick={() => toggleStatus(coupon)}
                                             className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${coupon.is_active
-                                                    ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
-                                                    : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'
+                                                ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
+                                                : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'
                                                 }`}
                                         >
                                             {coupon.is_active ? 'Ativo' : 'Inativo'}
