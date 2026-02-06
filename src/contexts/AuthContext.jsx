@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
 
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
-                .select('id, email, role, is_suspended, full_name, tax_id, whatsapp, city, state')
+                .select('id, email, role, is_suspended, manual_block, full_name, tax_id, whatsapp, city, state')
                 .eq('id', id)
                 .maybeSingle()
 
@@ -192,7 +192,7 @@ export const AuthProvider = ({ children }) => {
         user: session?.user ?? null,
         profile,
         role: isMasterAdmin ? 'admin' : (profile?.role ?? 'user'),
-        isSuspended: isMasterAdmin ? false : (profile?.is_suspended ?? false),
+        isSuspended: isMasterAdmin ? false : (profile?.is_suspended || profile?.manual_block || false),
         subscriptionStatus: isMasterAdmin ? 'active' : (profile?.subscription_status ?? 'incomplete'),
         planType: profile?.plan_type,
         loading,

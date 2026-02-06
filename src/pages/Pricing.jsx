@@ -59,42 +59,12 @@ export default function Pricing() {
         'Atualizações constantes'
     ]
 
-    const handleSubscribe = async (priceId) => {
-        console.log('DEBUG: Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY?.slice(0, 10))
+    const handleSubscribe = async (planId) => {
         if (!user) {
             navigate('/signup')
             return
         }
-
-        try {
-            const { data, error } = await supabase.functions.invoke('create-checkout', {
-                body: {
-                    priceId,
-                    successUrl: window.location.origin + '/dashboard?session_id={CHECKOUT_SESSION_ID}',
-                    cancelUrl: window.location.href,
-                }
-            })
-
-            if (error) throw error
-            if (data?.url) window.location.href = data.url
-        } catch (error) {
-            console.error('Error creating checkout:', error)
-            let message = 'Erro ao iniciar pagamento. Tente novamente.'
-
-            if (error.context && typeof error.context.json === 'function') {
-                try {
-                    const errorDetails = await error.context.json()
-                    console.error('Detailed Edge Function Error:', errorDetails)
-                    message = `Erro: ${errorDetails.error || errorDetails.message || message}`
-                } catch (e) {
-                    console.error('Could not parse error body:', e)
-                }
-            } else if (error.message) {
-                message = `Erro: ${error.message}`
-            }
-
-            alert(message)
-        }
+        navigate(`/checkout/${planId}`)
     }
 
     return (

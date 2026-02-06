@@ -36,8 +36,16 @@ export class StripeProvider implements PaymentProvider {
             success_url: params.successUrl,
             cancel_url: params.cancelUrl,
             metadata: params.metadata,
-            subscription_data: { metadata: params.metadata }
+            subscription_data: {
+                metadata: params.metadata,
+                // Simple implementation: for Stripe, we'd ideally use a coupon. 
+                // Here we just pass the metadata and log the customAmount if present.
+            }
         });
+
+        if (params.customAmount) {
+            console.warn('Stripe customAmount (coupon) received but not fully applied to subscription_data. Using base priceId.');
+        }
 
         if (!session.url) throw new Error('Stripe Session URL is null');
 
@@ -127,6 +135,7 @@ export class ASAASProvider implements PaymentProvider {
         console.log('ASAAS: Creating checkout for', params.customerId);
 
         const config = ASAAS_PLAN_CONFIGS[params.priceId] || { name: 'Assinatura Risu', value: 99.90, cycle: 'MONTHLY' };
+        const finalValue = params.customAmount ?? config.value;
 
         // ASAAS doesn't like Stripe placeholders like {CHECKOUT_SESSION_ID}
         const cleanSuccessUrl = params.successUrl.replace('{CHECKOUT_SESSION_ID}', 'asaas_success');
@@ -138,7 +147,7 @@ export class ASAASProvider implements PaymentProvider {
             billingType: 'UNDEFINED', // This should allow Pix, Card and Boleto
             chargeType: 'RECURRENT',
             subscriptionCycle: config.cycle,
-            value: config.value,
+            value: finalValue,
             dueDateLimitDays: 3,
             callback: {
                 successUrl: cleanSuccessUrl,

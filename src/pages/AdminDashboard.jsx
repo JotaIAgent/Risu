@@ -22,9 +22,11 @@ import {
     Unlock,
     Lock,
     UserPlus,
-    RefreshCw
+    RefreshCw,
+    Ticket
 } from 'lucide-react'
 import AdminSubscribers from './AdminSubscribers'
+import AdminCoupons from './AdminCoupons'
 import AdminSupport from './AdminSupport'
 import AdminFinance from './AdminFinance'
 import AdminUsage from './AdminUsage'
@@ -41,6 +43,7 @@ const AdminSidebar = () => {
         { icon: LayoutDashboard, label: 'Visão Geral', path: '/admin' },
         { icon: Users, label: 'Assinantes', path: '/admin/subscribers' },
         { icon: CreditCard, label: 'Financeiro', path: '/admin/finance' },
+        { icon: Ticket, label: 'Cupons', path: '/admin/coupons' },
         { icon: MessageSquare, label: 'Suporte', path: '/admin/support' },
         { icon: BarChart3, label: 'Uso do Sistema', path: '/admin/usage' },
         { icon: Settings, label: 'Configurações', path: '/admin/settings' },
@@ -125,6 +128,7 @@ const AdminOverview = () => {
         mrrTrend: 12,
         churnRate: 0,
         newToday: 0,
+        couponRevenue: 0,
         events: [],
         referralStats: [],
         companySizeStats: []
@@ -190,7 +194,14 @@ const AdminOverview = () => {
 
                 const churnRate = totalCount > 0 ? ((canceledLast30 / totalCount) * 100).toFixed(1) : 0
 
-                // 3. Aggregate Activity Feed (Subscription Events + Support)
+                // 3. Coupon Stats
+                const { data: couponUsages } = await supabase
+                    .from('saas_coupon_usages')
+                    .select('final_amount')
+
+                const couponRevenue = couponUsages?.reduce((acc, curr) => acc + (curr.final_amount || 0), 0) || 0
+
+                // 4. Aggregate Activity Feed (Subscription Events + Support)
                 const [{ data: eventsData }, { data: recentTickets }] = await Promise.all([
                     supabase.from('subscription_events')
                         .select('*, profiles(full_name, email)')
@@ -232,6 +243,7 @@ const AdminOverview = () => {
                     mrrTrend: 12, // Mocked for now
                     churnRate: churnRate,
                     newToday: newTodayCount || 0,
+                    couponRevenue,
                     events,
                     referralStats: [],
                     companySizeStats: []
@@ -328,6 +340,13 @@ const AdminOverview = () => {
                     icon={TrendingUp}
                     colorClass="text-purple-600"
                     description="Assinaturas criadas nas últimas 24h"
+                />
+                <StatCard
+                    label="Receita c/ Cupons"
+                    value={loading ? "..." : `R$ ${metrics.couponRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    icon={Ticket}
+                    colorClass="text-amber-600"
+                    description="Total gerado via campanhas"
                 />
                 <StatCard
                     label="Assinantes Cancelados"
@@ -516,6 +535,7 @@ export default function AdminDashboard() {
                     <Route index element={<AdminOverview />} />
                     <Route path="subscribers" element={<AdminSubscribers />} />
                     <Route path="finance" element={<AdminFinance />} />
+                    <Route path="coupons" element={<AdminCoupons />} />
                     <Route path="support" element={<AdminSupport />} />
                     <Route path="usage" element={<AdminUsage />} />
                     <Route path="settings" element={<AdminSettings />} />

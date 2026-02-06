@@ -12,6 +12,7 @@ export interface PaymentProvider {
         priceId: string;
         successUrl: string;
         cancelUrl: string;
+        customAmount?: number;
         metadata?: Record<string, any>;
     }): Promise<{ url: string; sessionId: string; gateway: string }>;
 

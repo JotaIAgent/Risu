@@ -15,9 +15,7 @@ serve(async (req) => {
 
         console.log(`ASAAS Webhook received: ${event}`, payment.id)
 
-        // 1. Security Check (Optional but Recommended)
-        // You should set ASAAS_WEBHOOK_TOKEN in your Supabase Secrets
-        // This token is configured in the ASAAS Webhook settings
+        // 1. Security Check
         const authToken = req.headers.get('asaas-access-token')
         const expectedToken = Deno.env.get('ASAAS_WEBHOOK_TOKEN')
 
@@ -30,18 +28,18 @@ serve(async (req) => {
         const gatewaySubscriptionId = payment.subscriptionId || payment.id
         const customerId = payment.customer
         const status = payment.status
+        const paymentConfirmed = ['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'].includes(event)
 
         // 3. Map ASAAS status to our Status
-        // ASAAS statuses: CONFIRMED, RECEIVED, OVERDUE, DELETED, etc.
         let targetStatus = 'active'
         if (status === 'OVERDUE') targetStatus = 'past_due'
         if (status === 'DELETED') targetStatus = 'canceled'
         if (status === 'REFUNDED') targetStatus = 'canceled'
 
-        // 4. Find user by Customer ID or Subscription ID
+        // 4. Find user and pending info
         const { data: sub, error: subError } = await supabaseAdmin
             .from('saas_subscriptions')
-            .select('user_id, plan_name')
+            .select('user_id, plan_name, gateway_subscription_id, pending_coupon')
             .or(`gateway_customer_id.eq.${customerId},gateway_subscription_id.eq.${gatewaySubscriptionId}`)
             .maybeSingle()
 
@@ -50,13 +48,44 @@ serve(async (req) => {
             return new Response(JSON.stringify({ received: true, warning: 'User not found' }), { status: 200 })
         }
 
-        // 5. Update Subscription
-        const updateData: any = {
-            status: targetStatus,
-            updated_at: new Date().toISOString()
+        // 5. Handle Coupon Usage if Payment is Confirmed
+        if (paymentConfirmed && sub.pending_coupon) {
+            console.log(`Processing pending coupon usage: ${sub.pending_coupon} for user ${sub.user_id}`);
+
+            const { data: coupon } = await supabaseAdmin
+                .from('saas_coupons')
+                .select('*')
+                .eq('code', sub.pending_coupon.toUpperCase())
+                .maybeSingle()
+
+            if (coupon) {
+                // Register Usage
+                const discountAmount = coupon.type === 'percentage'
+                    ? (payment.originalValue * (coupon.value / 100))
+                    : coupon.value;
+
+                await supabaseAdmin.from('saas_coupon_usages').insert({
+                    coupon_id: coupon.id,
+                    user_id: sub.user_id,
+                    original_amount: payment.originalValue || payment.value,
+                    discount_amount: discountAmount,
+                    final_amount: payment.value
+                })
+
+                // Increment Uses
+                await supabaseAdmin.rpc('increment_coupon_usage', { coupon_id: coupon.id })
+
+                console.log(`Coupon ${sub.pending_coupon} usage registered.`);
+            }
         }
 
-        // If it's a new subscription or payment link conversion
+        // 6. Update Subscription
+        const updateData: any = {
+            status: targetStatus,
+            updated_at: new Date().toISOString(),
+            pending_coupon: paymentConfirmed ? null : sub.pending_coupon // Clear if confirmed
+        }
+
         if (payment.subscriptionId && !sub.gateway_subscription_id) {
             updateData.gateway_subscription_id = payment.subscriptionId
         }
@@ -71,11 +100,11 @@ serve(async (req) => {
             throw updateError
         }
 
-        // 6. Log Event
+        // 7. Log Event
         await supabaseAdmin.from('subscription_events').insert({
             user_id: sub.user_id,
             event_type: event.toLowerCase(),
-            description: `Pagamento ASAAS: ${status}. ID: ${payment.id}`,
+            description: `Pagamento ASAAS: ${status}. ID: ${payment.id}. Cupom: ${sub.pending_coupon || 'Nenhum'}`,
             plan_name: sub.plan_name
         })
 

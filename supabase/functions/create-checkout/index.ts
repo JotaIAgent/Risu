@@ -15,7 +15,8 @@ serve(async (req: Request) => {
     }
 
     try {
-        const { priceId, successUrl, cancelUrl } = await req.json()
+        const body = await req.json()
+        const { priceId, successUrl, cancelUrl, couponCode } = body
 
         const authHeader = req.headers.get('Authorization')
         if (!authHeader) {
@@ -53,6 +54,54 @@ serve(async (req: Request) => {
             .select('tax_id, full_name')
             .eq('id', user.id)
             .single()
+
+        // 7. Coupon Validation
+        let customAmount: number | undefined = undefined;
+        let discountAmountValue = 0;
+
+        if (couponCode) {
+            console.log('Validating coupon:', couponCode);
+            const { data: coupon, error: couponError } = await supabaseAdmin
+                .from('saas_coupons')
+                .select('*')
+                .eq('code', couponCode.toUpperCase())
+                .eq('is_active', true)
+                .maybeSingle()
+
+            if (couponError) console.error('Coupon fetch error:', couponError);
+
+            if (coupon) {
+                const now = new Date();
+                const isValidDate = (!coupon.valid_until || new Date(coupon.valid_until) > now);
+                const hasUses = (coupon.current_uses < coupon.max_uses);
+
+                if (isValidDate && hasUses) {
+                    // Calculate base price from shared config (we need to import or replicate config here)
+                    // For now, we fetch the config from the priceId
+                    const ASAAS_PLAN_CONFIGS: Record<string, number> = {
+                        'price_1SqHrZJrvxBiHEjISBIjF1Xg': 99.90,
+                        'price_1SqHtTJrvxBiHEIgyTx6ECr': 269.70,
+                        'price_1SqHu6JrvxBiHEjIcFJOrE7Y': 479.40,
+                        'price_1SqHuVJrvxBiHEjIUNJCWLFm': 838.80,
+                    };
+
+                    const baseValue = ASAAS_PLAN_CONFIGS[priceId] || 99.90;
+
+                    if (coupon.type === 'percentage') {
+                        discountAmountValue = baseValue * (Number(coupon.value) / 100);
+                    } else {
+                        discountAmountValue = Number(coupon.value);
+                    }
+
+                    customAmount = Math.max(0, baseValue - discountAmountValue);
+                    console.log(`Coupon ${couponCode} applied! Discount: ${discountAmountValue}. Final: ${customAmount}`);
+                } else {
+                    console.warn('Coupon invalid or expired:', couponCode);
+                }
+            } else {
+                console.warn('Coupon not found:', couponCode);
+            }
+        }
 
         // Initialize Payment Provider via Factory
         const activeGatewayName = (Deno.env.get('ACTIVE_GATEWAY') || 'stripe').toLowerCase()
@@ -94,7 +143,8 @@ serve(async (req: Request) => {
                         user_id: user.id,
                         gateway_customer_id: customerId,
                         gateway_name: activeGatewayName,
-                        status: subscription?.status || 'incomplete'
+                        status: subscription?.status || 'incomplete',
+                        pending_coupon: discountAmountValue > 0 ? couponCode : null
                     })
 
                 if (upsertError) {
@@ -115,18 +165,24 @@ serve(async (req: Request) => {
                 priceId,
                 successUrl,
                 cancelUrl,
+                customAmount,
                 metadata: {
-                    supabase_user_id: user.id
+                    supabase_user_id: user.id,
+                    coupon_code: couponCode
                 }
             })
 
             console.log('Checkout session created:', result.sessionId)
 
+            // If a coupon was applied, log it as a pending usage in metadata or similar
+            // Actually, we increment usage on webhook confirmation.
+
             return new Response(
                 JSON.stringify({
                     sessionId: result.sessionId,
                     url: result.url,
-                    gateway: result.gateway
+                    gateway: result.gateway,
+                    appliedDiscount: discountAmountValue > 0 ? discountAmountValue : undefined
                 }),
                 { headers: { ...corsHeaders, "Content-Type": "application/json" } },
             )
