@@ -63,7 +63,7 @@ serve(async (req) => {
         // We try to find by customerId or gatewaySubscriptionId
         const { data: sub, error: subError } = await supabaseAdmin
             .from('saas_subscriptions')
-            .select('id, user_id, plan_name, gateway_subscription_id, pending_coupon')
+            .select('id, user_id, plan_name, gateway_subscription_id, gateway_customer_id, pending_coupon')
             .or(`gateway_customer_id.eq.${customerId},gateway_subscription_id.eq.${gatewaySubscriptionId}`)
             .maybeSingle()
 

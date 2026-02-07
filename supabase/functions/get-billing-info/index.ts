@@ -33,7 +33,7 @@ serve(async (req: Request) => {
             .from('saas_subscriptions')
             .select('*')
             .eq('user_id', user.id)
-            .order('status', { ascending: true }) // active comes before trialing socially? No, string sorting.
+            .order('created_at', { ascending: false })
 
         if (!subs || subs.length === 0) {
             return new Response(JSON.stringify({ planName: 'Sem Assinatura', subscriptionStatus: 'none', invoices: [], events: [] }), { status: 200, headers: corsHeaders })
@@ -45,17 +45,13 @@ serve(async (req: Request) => {
             subs.find(s => s.status === 'trialing') ||
             subs[0];
 
-        if (!sub.gateway_customer_id) {
-            return new Response(JSON.stringify({ planName: 'Sem Assinatura', subscriptionStatus: 'none', invoices: [], events: [] }), { status: 200, headers: corsHeaders })
-        }
-
         const provider = PaymentProviderFactory.getProvider(sub.gateway_name);
 
-        let planName = sub.plan_name || 'Risu Mensal'
+        let planName = sub.plan_name || 'Plano Profissional'
         let status = sub.status
         let nextBillingDate = sub.current_period_end
 
-        if (sub.gateway_subscription_id) {
+        if (sub.gateway_customer_id && sub.gateway_subscription_id) {
             try {
                 const gatewaySub = await provider.getSubscriptionStatus(sub.gateway_subscription_id);
 
