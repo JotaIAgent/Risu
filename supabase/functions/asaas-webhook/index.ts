@@ -9,112 +9,137 @@ const supabaseAdmin = createClient(
 )
 
 serve(async (req) => {
+    const requestId = crypto.randomUUID().substring(0, 8);
     try {
         const body = await req.json()
-        const { event, payment } = body
+        const { event } = body
+        const payment = body.payment
+        const subscriptionObj = body.subscription
 
-        console.log(`ASAAS Webhook received: ${event}`, payment.id)
+        console.log(`[${requestId}] Webhook received: ${event}`);
 
         // 1. Security Check
         const authToken = req.headers.get('asaas-access-token')
         const expectedToken = Deno.env.get('ASAAS_WEBHOOK_TOKEN')
 
         if (expectedToken && authToken !== expectedToken) {
-            console.error('Invalid ASAAS access token')
+            console.error(`[${requestId}] Invalid ASAAS access token`);
             return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
         }
 
-        // 2. Extract Data
-        const gatewaySubscriptionId = payment.subscriptionId || payment.id
-        const customerId = payment.customer
-        const status = payment.status
-        const paymentConfirmed = ['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'].includes(event)
+        // 2. Identify Target (Payment or Subscription)
+        const targetObj = payment || subscriptionObj;
+        if (!targetObj) {
+            console.log(`[${requestId}] No payment or subscription object in body. Ignoring.`);
+            return new Response(JSON.stringify({ received: true, note: 'No target object' }), { status: 200 })
+        }
 
-        // 3. Map ASAAS status to our Status
-        let targetStatus = 'active'
-        if (status === 'OVERDUE') targetStatus = 'past_due'
-        if (status === 'DELETED') targetStatus = 'canceled'
-        if (status === 'REFUNDED') targetStatus = 'canceled'
+        const customerId = targetObj.customer;
+        const gatewaySubscriptionId = targetObj.subscriptionId || targetObj.id;
+        const status = targetObj.status;
 
-        // 4. Find user and pending info
+        console.log(`[${requestId}] Processing: Event=${event}, Customer=${customerId}, GatewaySubId=${gatewaySubscriptionId}, Status=${status}`);
+
+        // 3. Status Mapping
+        const paymentConfirmed = ['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'].includes(event);
+        let targetStatus = 'active';
+
+        if (status === 'OVERDUE') targetStatus = 'past_due';
+        if (status === 'DELETED' || status === 'REFUNDED') targetStatus = 'canceled';
+        if (status === 'PENDING') targetStatus = 'incomplete';
+
+        // 4. Find subscription in our DB
+        // We try to find by customerId or gatewaySubscriptionId
         const { data: sub, error: subError } = await supabaseAdmin
             .from('saas_subscriptions')
-            .select('user_id, plan_name, gateway_subscription_id, pending_coupon')
+            .select('id, user_id, plan_name, gateway_subscription_id, pending_coupon')
             .or(`gateway_customer_id.eq.${customerId},gateway_subscription_id.eq.${gatewaySubscriptionId}`)
             .maybeSingle()
 
-        if (subError || !sub) {
-            console.warn('Subscription or user not found for this event:', customerId)
-            return new Response(JSON.stringify({ received: true, warning: 'User not found' }), { status: 200 })
+        if (subError) {
+            console.error(`[${requestId}] DB Error finding sub:`, subError);
+            throw subError;
         }
 
-        // 5. Handle Coupon Usage if Payment is Confirmed
+        if (!sub) {
+            console.warn(`[${requestId}] Subscription/User not found for Customer=${customerId} or SubId=${gatewaySubscriptionId}`);
+            // Return 200 to Asaas so they stop retrying, but log as warning
+            return new Response(JSON.stringify({ received: true, warning: 'Sub not found' }), { status: 200 })
+        }
+
+        console.log(`[${requestId}] Found sub for user: ${sub.user_id}. Current status in DB: ${sub.status}`);
+
+        // 5. Handle Coupon
         if (paymentConfirmed && sub.pending_coupon) {
-            console.log(`Processing pending coupon usage: ${sub.pending_coupon} for user ${sub.user_id}`);
+            console.log(`[${requestId}] Registering coupon: ${sub.pending_coupon}`);
+            try {
+                const { data: coupon } = await supabaseAdmin
+                    .from('saas_coupons')
+                    .select('*')
+                    .eq('code', sub.pending_coupon.toUpperCase())
+                    .maybeSingle()
 
-            const { data: coupon } = await supabaseAdmin
-                .from('saas_coupons')
-                .select('*')
-                .eq('code', sub.pending_coupon.toUpperCase())
-                .maybeSingle()
+                if (coupon) {
+                    const discountAmount = coupon.type === 'percentage'
+                        ? ((targetObj.originalValue || targetObj.value) * (coupon.value / 100))
+                        : coupon.value;
 
-            if (coupon) {
-                // Register Usage
-                const discountAmount = coupon.type === 'percentage'
-                    ? (payment.originalValue * (coupon.value / 100))
-                    : coupon.value;
+                    await supabaseAdmin.from('saas_coupon_usages').insert({
+                        coupon_id: coupon.id,
+                        user_id: sub.user_id,
+                        original_amount: targetObj.originalValue || targetObj.value,
+                        discount_amount: discountAmount,
+                        final_amount: targetObj.value
+                    })
 
-                await supabaseAdmin.from('saas_coupon_usages').insert({
-                    coupon_id: coupon.id,
-                    user_id: sub.user_id,
-                    original_amount: payment.originalValue || payment.value,
-                    discount_amount: discountAmount,
-                    final_amount: payment.value
-                })
-
-                // Increment Uses
-                await supabaseAdmin.rpc('increment_coupon_usage', { coupon_id: coupon.id })
-
-                console.log(`Coupon ${sub.pending_coupon} usage registered.`);
+                    await supabaseAdmin.rpc('increment_coupon_usage', { coupon_id: coupon.id })
+                    console.log(`[${requestId}] Coupon usage registered success.`);
+                }
+            } catch (couponErr) {
+                console.error(`[${requestId}] Error processing coupon:`, couponErr);
+                // Don't fail the whole webhook for a coupon error
             }
         }
 
-        // 6. Update Subscription
+        // 6. Update Subscription Status
         const updateData: any = {
             status: targetStatus,
             updated_at: new Date().toISOString(),
-            pending_coupon: paymentConfirmed ? null : sub.pending_coupon // Clear if confirmed
+            // Clear pending_coupon if payment confirmed
+            pending_coupon: paymentConfirmed ? null : sub.pending_coupon
         }
 
-        if (payment.subscriptionId && !sub.gateway_subscription_id) {
-            updateData.gateway_subscription_id = payment.subscriptionId
+        // If it's a new subscription ID from Asaas, save it
+        if (targetObj.subscriptionId && !sub.gateway_subscription_id) {
+            updateData.gateway_subscription_id = targetObj.subscriptionId;
         }
 
         const { error: updateError } = await supabaseAdmin
             .from('saas_subscriptions')
             .update(updateData)
-            .eq('user_id', sub.user_id)
+            .eq('id', sub.id)
 
         if (updateError) {
-            console.error('Error updating subscription:', updateError)
-            throw updateError
+            console.error(`[${requestId}] Error updating sub in DB:`, updateError);
+            throw updateError;
         }
 
-        // 7. Log Event
+        // 7. Log Event for History
         await supabaseAdmin.from('subscription_events').insert({
             user_id: sub.user_id,
             event_type: event.toLowerCase(),
-            description: `Pagamento ASAAS: ${status}. ID: ${payment.id}. Cupom: ${sub.pending_coupon || 'Nenhum'}`,
+            description: `Asaas Webhook: ${status}. Event: ${event}. Ref: ${targetObj.id}`,
             plan_name: sub.plan_name
         })
 
-        return new Response(JSON.stringify({ received: true }), {
+        console.log(`[${requestId}] Webhook processed successfully.`);
+        return new Response(JSON.stringify({ success: true }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
         })
 
-    } catch (err) {
-        console.error('Webhook Error:', err.message)
-        return new Response(JSON.stringify({ error: err.message }), { status: 400 })
+    } catch (err: any) {
+        console.error(`[${requestId}] Fatal Webhook Error:`, err.message);
+        return new Response(JSON.stringify({ error: err.message, requestId }), { status: 400 })
     }
 })
