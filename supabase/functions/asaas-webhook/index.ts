@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-console.log("ASAAS Webhook Handler v1.1 - Robust Edition")
+console.log("ASAAS Webhook Handler v1.2 - Ultra-Robust Edition")
 
 const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -10,13 +10,14 @@ const supabaseAdmin = createClient(
 
 serve(async (req) => {
     const requestId = crypto.randomUUID().substring(0, 8);
+    const version = "1.2";
     try {
         const body = await req.json()
         const { event } = body
         const payment = body.payment
         const subscriptionObj = body.subscription
 
-        console.log(`[${requestId}] Webhook received: ${event}. Raw Body: ${JSON.stringify(body).substring(0, 200)}...`);
+        console.log(`[${requestId}][v${version}] Webhook received: ${event}.`);
 
         // 1. Security Check
         const authToken = req.headers.get('asaas-access-token')
@@ -24,19 +25,29 @@ serve(async (req) => {
 
         if (expectedToken && authToken !== expectedToken) {
             console.error(`[${requestId}] Invalid ASAAS access token`);
-            return new Response(JSON.stringify({ error: 'Unauthorized', requestId }), { status: 401 })
+            return new Response(JSON.stringify({ error: 'Unauthorized', requestId, version }), { status: 401 })
         }
 
-        // 2. Identify Target (Payment or Subscription)
-        const targetObj = payment || subscriptionObj || body; // Fallback to body itself just in case
+        // 2. Identify Target (Defensive Logic)
+        let targetObj = null;
+        if (payment && typeof payment === 'object') targetObj = payment;
+        else if (subscriptionObj && typeof subscriptionObj === 'object') targetObj = subscriptionObj;
+        else if (body && typeof body === 'object' && body.id) targetObj = body; // Top level fallback
 
-        const customerId = targetObj?.customer;
-        const gatewaySubscriptionId = targetObj?.subscriptionId || targetObj?.id;
-        const status = targetObj?.status;
+        if (!targetObj) {
+            console.log(`[${requestId}] No target object found in body. event=${event}`);
+            return new Response(JSON.stringify({ received: true, note: 'No target object', requestId, version }), { status: 200 })
+        }
+
+        const customerId = targetObj.customer || body.customer; // Some events have customer at top level
+        const gatewaySubscriptionId = targetObj.subscriptionId || targetObj.id;
+        const status = targetObj.status || body.status;
+
+        console.log(`[${requestId}] Processing: Event=${event}, Customer=${customerId}, RefId=${gatewaySubscriptionId}, Status=${status}`);
 
         if (!customerId && !gatewaySubscriptionId) {
-            console.log(`[${requestId}] No identifier found in body. event=${event}. Ignoring.`);
-            return new Response(JSON.stringify({ received: true, note: 'No ID found', requestId }), { status: 200 })
+            console.warn(`[${requestId}] Could not find customerId or subId in payload.`);
+            return new Response(JSON.stringify({ received: true, note: 'No identifiers found', requestId, version }), { status: 200 })
         }
 
         console.log(`[${requestId}] Processing: Event=${event}, Customer=${customerId}, GatewaySubId=${gatewaySubscriptionId}, Status=${status}`);

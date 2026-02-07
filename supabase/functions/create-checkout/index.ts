@@ -167,7 +167,57 @@ serve(async (req: Request) => {
 
         console.log('Using Customer ID:', customerId)
 
-        // 7. Create Checkout Session / URL
+        // 7. Zero-Price Bypass (100% Discount)
+        if (customAmount === 0 && discountAmountValue > 0) {
+            console.log('Zero-Price Bypass triggered (100% Discount) for:', user.email);
+
+            // 1. Update Subscription to Active immediately
+            const { error: activateError } = await supabaseAdmin
+                .from('saas_subscriptions')
+                .update({
+                    status: 'active',
+                    updated_at: new Date().toISOString(),
+                    pending_coupon: null
+                })
+                .eq('user_id', user.id);
+
+            if (activateError) throw activateError;
+
+            // 2. Register Coupon Usage manually (no webhook will fire)
+            const { data: coupon } = await supabaseAdmin
+                .from('saas_coupons')
+                .select('id')
+                .eq('code', couponCode.toUpperCase())
+                .maybeSingle();
+
+            if (coupon) {
+                await supabaseAdmin.from('saas_coupon_usages').insert({
+                    coupon_id: coupon.id,
+                    user_id: user.id,
+                    original_amount: (discountAmountValue),
+                    discount_amount: discountAmountValue,
+                    final_amount: 0
+                });
+
+                await supabaseAdmin.rpc('increment_coupon_usage', { coupon_id: coupon.id });
+                console.log('Zero-price coupon usage registered successfully.');
+            }
+
+            // 3. Return Success URL (replace placeholder for sessionId)
+            const finalSuccessUrl = successUrl.replace('{CHECKOUT_SESSION_ID}', 'free_bypass');
+
+            return new Response(
+                JSON.stringify({
+                    sessionId: 'zero_price_bypass',
+                    url: finalSuccessUrl,
+                    gateway: 'bypass',
+                    appliedDiscount: discountAmountValue
+                }),
+                { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            );
+        }
+
+        // 8. Create Checkout Session / URL
         try {
             console.log('Final step: Creating checkout session with:', { customerId, priceId, customAmount });
             const result = await provider.createCheckout({
