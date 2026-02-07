@@ -147,7 +147,7 @@ export default function SubscriptionManager({ user }) {
                     <div className="relative z-10">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-1">Status da Conta</p>
                         <h3 className="text-2xl font-black mb-4 flex items-center gap-2">
-                            {(subscriptionStatus.isActive || subscriptionStatus.isCanceled) ? (subscriptionData?.plan_name || 'Risu Mensal') : 'Sem Assinatura'}
+                            {(subscriptionStatus.isActive || subscriptionStatus.isCanceled) ? (subscriptionData?.plan_name || 'Plano Ativo') : 'Sem Assinatura'}
                         </h3>
 
                         <div className="flex flex-wrap gap-2 mb-6">
@@ -169,15 +169,19 @@ export default function SubscriptionManager({ user }) {
                                         body: { returnUrl: window.location.href }
                                     })
                                     if (error) throw error
-                                    if (data?.url) window.location.href = data.url
+                                    if (data?.url) {
+                                        window.location.href = data.url
+                                    } else if (data?.note) {
+                                        alert('O Asaas não possui um portal centralizado. As faturas detalhadas estão listadas abaixo.')
+                                    }
                                 } catch (err) {
                                     console.error('Portal error:', err)
-                                    alert('Não foi possível acessar o portal de gerenciamento.')
+                                    alert('Não foi possível acessar o gerenciamento de assinatura.')
                                 }
                             }}
                             className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-900/20"
                         >
-                            Gerenciar Assinatura & Pagamentos
+                            Ver Faturas & Pagamentos
                         </button>
                     </div>
                     <div className="absolute -top-10 -right-10 p-12 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity rotate-12">
@@ -215,7 +219,7 @@ export default function SubscriptionManager({ user }) {
                     {loadingBilling ? (
                         <div className="p-12 text-center text-slate-400">
                             <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                            <p className="text-xs font-bold uppercase tracking-widest">Sincronizando com Stripe...</p>
+                            <p className="text-xs font-bold uppercase tracking-widest">Sincronizando faturas...</p>
                         </div>
                     ) : timeline.length > 0 ? (
                         <div className="divide-y divide-slate-100">
@@ -223,10 +227,10 @@ export default function SubscriptionManager({ user }) {
                                 <div key={item.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors group">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.category === 'payment' ? 'bg-green-50 text-green-600' :
-                                                item.eventType === 'canceled' ? 'bg-red-50 text-red-600' :
-                                                    item.eventType === 'cancellation_scheduled' ? 'bg-orange-50 text-orange-600' :
-                                                        item.eventType === 'reactivated' ? 'bg-blue-50 text-blue-600' :
-                                                            item.eventType === 'subscribed' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-500'
+                                            item.eventType === 'canceled' ? 'bg-red-50 text-red-600' :
+                                                item.eventType === 'cancellation_scheduled' ? 'bg-orange-50 text-orange-600' :
+                                                    item.eventType === 'reactivated' ? 'bg-blue-50 text-blue-600' :
+                                                        item.eventType === 'subscribed' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-500'
                                             }`}>
                                             {item.category === 'payment' ? <CheckCircle2 size={18} /> :
                                                 item.eventType === 'canceled' ? <XCircle size={18} /> :

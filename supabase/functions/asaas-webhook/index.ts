@@ -42,15 +42,14 @@ serve(async (req) => {
         const customerId = targetObj.customer || body.customer; // Some events have customer at top level
         const gatewaySubscriptionId = targetObj.subscriptionId || targetObj.id;
         const status = targetObj.status || body.status;
+        const nextDueDate = targetObj.nextDueDate || targetObj.dueDate; // For subscriptions or payments
 
-        console.log(`[${requestId}] Processing: Event=${event}, Customer=${customerId}, RefId=${gatewaySubscriptionId}, Status=${status}`);
+        console.log(`[${requestId}] Processing: Event=${event}, Customer=${customerId}, RefId=${gatewaySubscriptionId}, Status=${status}, NextDue=${nextDueDate}`);
 
         if (!customerId && !gatewaySubscriptionId) {
             console.warn(`[${requestId}] Could not find customerId or subId in payload.`);
             return new Response(JSON.stringify({ received: true, note: 'No identifiers found', requestId, version }), { status: 200 })
         }
-
-        console.log(`[${requestId}] Processing: Event=${event}, Customer=${customerId}, GatewaySubId=${gatewaySubscriptionId}, Status=${status}`);
 
         // 3. Status Mapping
         const paymentConfirmed = ['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'].includes(event);
@@ -79,7 +78,7 @@ serve(async (req) => {
             return new Response(JSON.stringify({ received: true, warning: 'Sub not found' }), { status: 200 })
         }
 
-        console.log(`[${requestId}] Found sub for user: ${sub.user_id}. Current status in DB: ${sub.status}`);
+        console.log(`[${requestId}] Found sub for user: ${sub.user_id}.`);
 
         // 5. Handle Coupon
         if (paymentConfirmed && sub.pending_coupon) {
@@ -119,6 +118,11 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
             // Clear pending_coupon if payment confirmed
             pending_coupon: paymentConfirmed ? null : sub.pending_coupon
+        }
+
+        // IMPORTANT: Update current_period_end for Frontend Auth check
+        if (nextDueDate) {
+            updateData.current_period_end = new Date(nextDueDate).toISOString();
         }
 
         // If it's a new subscription ID from Asaas, save it

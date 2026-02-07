@@ -53,12 +53,22 @@ serve(async (req: Request) => {
 
         const { data: subscription } = await supabaseClient
             .from('saas_subscriptions')
-            .select('stripe_customer_id')
+            .select('stripe_customer_id, gateway_name, gateway_customer_id')
             .eq('user_id', user.id)
             .maybeSingle()
 
+        if (subscription?.gateway_name === 'asaas') {
+            return new Response(JSON.stringify({
+                url: '',
+                note: 'Asaas uses direct links for billing. Please check your latest invoice.'
+            }), {
+                status: 200,
+                headers: { ...corsHeaders, "Content-Type": "application/json" }
+            })
+        }
+
         if (!subscription?.stripe_customer_id) {
-            return new Response(JSON.stringify({ error: 'Você ainda não tem uma assinatura ativa. Assine um plano primeiro.' }), {
+            return new Response(JSON.stringify({ error: 'Você ainda não tem uma assinatura ativa ou seu provedor não suporta portal.' }), {
                 status: 400,
                 headers: { ...corsHeaders, "Content-Type": "application/json" }
             })

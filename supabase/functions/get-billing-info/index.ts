@@ -43,14 +43,20 @@ serve(async (req: Request) => {
             try {
                 const gatewaySub = await provider.getSubscriptionStatus(sub.gateway_subscription_id);
 
-                // Stripe specific normalization (can be moved to adapter later if needed)
+                // Mapping
                 if (sub.gateway_name === 'stripe') {
                     status = gatewaySub.status
                     nextBillingDate = new Date(gatewaySub.current_period_end * 1000).toISOString()
                     const priceId = gatewaySub.items?.data?.[0]?.price?.id
                     planName = (priceId ? PLAN_MAPPING[priceId] : null) || gatewaySub.items?.data?.[0]?.price?.product?.name || planName
+                } else if (sub.gateway_name === 'asaas') {
+                    // ASAAS normalization
+                    status = (gatewaySub.status === 'ACTIVE' || gatewaySub.status === 'active') ? 'active' : 'inactive'
+                    if (gatewaySub.nextDueDate) {
+                        nextBillingDate = new Date(gatewaySub.nextDueDate).toISOString()
+                    }
                 } else {
-                    // Generic handling for other gateways
+                    // Generic fallback
                     status = gatewaySub.status || status
                 }
 
