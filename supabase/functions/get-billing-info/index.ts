@@ -27,9 +27,25 @@ serve(async (req: Request) => {
         if (!user) return new Response('Unauthorized', { status: 401 })
 
         const serviceClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-        const { data: sub } = await serviceClient.from('saas_subscriptions').select('*').eq('user_id', user.id).maybeSingle()
 
-        if (!sub?.gateway_customer_id) {
+        // Fetch all subscriptions for the user to handle duplicates
+        const { data: subs } = await serviceClient
+            .from('saas_subscriptions')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('status', { ascending: true }) // active comes before trialing socially? No, string sorting.
+
+        if (!subs || subs.length === 0) {
+            return new Response(JSON.stringify({ planName: 'Sem Assinatura', subscriptionStatus: 'none', invoices: [], events: [] }), { status: 200, headers: corsHeaders })
+        }
+
+        // Pick the best one: active > trialing > rest. Favor asaas if both active.
+        const sub = subs.find(s => s.status === 'active' && s.gateway_name === 'asaas') ||
+            subs.find(s => s.status === 'active') ||
+            subs.find(s => s.status === 'trialing') ||
+            subs[0];
+
+        if (!sub.gateway_customer_id) {
             return new Response(JSON.stringify({ planName: 'Sem Assinatura', subscriptionStatus: 'none', invoices: [], events: [] }), { status: 200, headers: corsHeaders })
         }
 

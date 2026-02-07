@@ -47,11 +47,19 @@ export const AuthProvider = ({ children }) => {
                 return null
             }
 
-            let { data: subData } = await supabase
+            let { data: subsData } = await supabase
                 .from('saas_subscriptions')
-                .select('status, plan_type, current_period_end, plan_name')
+                .select('status, plan_type, current_period_end, plan_name, gateway_name')
                 .eq('user_id', id)
-                .maybeSingle()
+
+            // Pick the best subscription (Active > Trialing > Others)
+            let subData = null
+            if (subsData && subsData.length > 0) {
+                subData = subsData.find(s => s.status === 'active' && s.gateway_name === 'asaas') ||
+                    subsData.find(s => s.status === 'active') ||
+                    subsData.find(s => s.status === 'trialing') ||
+                    subsData[0]
+            }
 
             // NOTE: Client-side trial creation is disabled due to RLS.
             // Trial creation is now handled by:
