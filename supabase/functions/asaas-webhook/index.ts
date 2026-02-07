@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-console.log("ASAAS Webhook Handler v1.0")
+console.log("ASAAS Webhook Handler v1.1 - Robust Edition")
 
 const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -16,7 +16,7 @@ serve(async (req) => {
         const payment = body.payment
         const subscriptionObj = body.subscription
 
-        console.log(`[${requestId}] Webhook received: ${event}`);
+        console.log(`[${requestId}] Webhook received: ${event}. Raw Body: ${JSON.stringify(body).substring(0, 200)}...`);
 
         // 1. Security Check
         const authToken = req.headers.get('asaas-access-token')
@@ -24,19 +24,20 @@ serve(async (req) => {
 
         if (expectedToken && authToken !== expectedToken) {
             console.error(`[${requestId}] Invalid ASAAS access token`);
-            return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+            return new Response(JSON.stringify({ error: 'Unauthorized', requestId }), { status: 401 })
         }
 
         // 2. Identify Target (Payment or Subscription)
-        const targetObj = payment || subscriptionObj;
-        if (!targetObj) {
-            console.log(`[${requestId}] No payment or subscription object in body. Ignoring.`);
-            return new Response(JSON.stringify({ received: true, note: 'No target object' }), { status: 200 })
-        }
+        const targetObj = payment || subscriptionObj || body; // Fallback to body itself just in case
 
-        const customerId = targetObj.customer;
-        const gatewaySubscriptionId = targetObj.subscriptionId || targetObj.id;
-        const status = targetObj.status;
+        const customerId = targetObj?.customer;
+        const gatewaySubscriptionId = targetObj?.subscriptionId || targetObj?.id;
+        const status = targetObj?.status;
+
+        if (!customerId && !gatewaySubscriptionId) {
+            console.log(`[${requestId}] No identifier found in body. event=${event}. Ignoring.`);
+            return new Response(JSON.stringify({ received: true, note: 'No ID found', requestId }), { status: 200 })
+        }
 
         console.log(`[${requestId}] Processing: Event=${event}, Customer=${customerId}, GatewaySubId=${gatewaySubscriptionId}, Status=${status}`);
 
