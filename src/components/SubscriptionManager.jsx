@@ -274,25 +274,6 @@ export default function SubscriptionManager({ user }) {
                 </div>
             </div>
 
-            <div className="pt-4 flex justify-center">
-                <button
-                    onClick={async () => {
-                        try {
-                            const { data, error } = await supabase.functions.invoke('create-portal', {
-                                body: { returnUrl: window.location.href }
-                            })
-                            if (error) throw error
-                            if (data?.url) window.location.href = data.url
-                        } catch (err) {
-                            console.error('Portal error:', err)
-                        }
-                    }}
-                    className="text-red-400 hover:text-red-600 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 group"
-                >
-                    <AlertCircle size={14} className="group-hover:animate-pulse" />
-                    Quero cancelar minha assinatura
-                </button>
-            </div>
         </div>
     )
 }
