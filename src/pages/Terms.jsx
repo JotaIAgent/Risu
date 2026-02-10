@@ -33,8 +33,8 @@ export default function Terms() {
                                 <span className="text-secondary font-serif">01.</span> Aceitação dos Termos
                             </h2>
                             <p className="font-medium">
-                                Ao acessar e utilizar o sistema Gestão Aluguel, você concorda em cumprir e estar vinculado a estes Termos de Uso.
-                                Se você não concordar com qualquer parte destes termos, não deverá utilizar nossos serviços.
+                                Ao acessar e utilizar o sistema Risu, você concorda em cumprir e estar vinculado a estes Termos de Uso.
+                                Se você não concordar com qualquer parte destes termos, não deverá utilizar nossos serviços. O uso continuado após alterações implica aceitação.
                             </p>
                         </section>
 
@@ -43,14 +43,15 @@ export default function Terms() {
                                 <span className="text-secondary font-serif">02.</span> Descrição do Serviço
                             </h2>
                             <p className="font-medium">
-                                O Gestão Aluguel é um Micro-SaaS focado na automação e gestão de locações de bens e equipamentos.
+                                O Risu é um Micro-SaaS focado na automação e gestão de locações de bens e equipamentos.
                                 O serviço inclui controle de estoque, agenda de locações, emissão de contratos e gestão financeira básica.
+                                Reservamo-nos o direito de modificar ou descontinuar recursos com aviso prévio.
                             </p>
                         </section>
 
                         <section className="space-y-4">
                             <h2 className="text-xl font-black text-[#13283b] dark:text-white uppercase tracking-tight flex items-center gap-3">
-                                <span className="text-secondary font-serif">03.</span> Responsabilidades do Usuário
+                                <span className="text-secondary font-serif">03.</span> Cadastro e Segurança
                             </h2>
                             <p className="font-medium">
                                 Você é responsável por manter a confidencialidade de sua conta e senha sob todas as circunstâncias.
@@ -60,16 +61,18 @@ export default function Terms() {
                                 <li>Uso legal do sistema apenas.</li>
                                 <li>Não compartilhar credenciais de acesso.</li>
                                 <li>Backup regular de seus dados de locação.</li>
+                                <li>Respeito aos limites de uso do plano contratado.</li>
                             </ul>
                         </section>
 
                         <section className="space-y-4">
                             <h2 className="text-xl font-black text-[#13283b] dark:text-white uppercase tracking-tight flex items-center gap-3">
-                                <span className="text-secondary font-serif">04.</span> Planos e Pagamentos
+                                <span className="text-secondary font-serif">04.</span> Planos, Pagamentos e Asaas
                             </h2>
                             <p className="font-medium">
-                                O acesso ao sistema é baseado em assinaturas recorrentes. O não pagamento nas datas estipuladas
-                                poderá resultar na suspensão temporária ou cancelamento do acesso aos recursos do sistema.
+                                O acesso ao sistema é baseado em assinaturas recorrentes processadas via gateway Asaas.
+                                Ao assinar, você autoriza a cobrança automática no método de pagamento escolhido.
+                                O não pagamento nas datas estipuladas resultará na suspensão imediata do acesso.
                             </p>
                         </section>
 
@@ -78,8 +81,8 @@ export default function Terms() {
                                 <span className="text-secondary font-serif">05.</span> Propriedade Intelectual
                             </h2>
                             <p className="font-medium">
-                                Todo o software, design, logotipos e códigos-fonte são de propriedade exclusiva do Gestão Aluguel
-                                ou de seus licenciadores, protegidos pelas leis de direitos autorais.
+                                Todo o software, design, logotipos e códigos-fonte são de propriedade exclusiva do Risu
+                                ou de seus licenciadores, protegidos pelas leis de direitos autorais. Você recebe uma licença de uso limitada e revogável.
                             </p>
                         </section>
 
@@ -89,7 +92,7 @@ export default function Terms() {
                             </h2>
                             <p className="font-medium">
                                 O sistema é fornecido "como está". Não nos responsabilizamos por perdas financeiras decorrentes
-                                do uso incorreto da plataforma ou indisponibilidades técnicas momentâneas.
+                                do uso incorreto da plataforma, indisponibilidades técnicas ou perda de dados. A responsabilidade total é limitada ao valor pago nos últimos 12 meses.
                             </p>
                         </section>
                     </div>

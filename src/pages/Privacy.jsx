@@ -33,44 +33,38 @@ export default function Privacy() {
                                 <span className="text-secondary font-serif">01.</span> Coleta de Dados
                             </h2>
                             <p className="font-medium">
-                                Coletamos as informações necessárias para a prestação de nossos serviços, como seu nome, email, CPF/CNPJ,
-                                e informações de contato. Esses dados são coletados no momento do seu cadastro.
+                                Coletamos dados essenciais como nome, email, CPF/CNPJ, e endereço para a prestação do serviço.
+                                A base legal para este tratamento é a execução de contrato (Art. 7º, V da LGPD).
                             </p>
                         </section>
 
                         <section className="space-y-4">
                             <h2 className="text-xl font-black text-[#13283b] dark:text-white uppercase tracking-tight flex items-center gap-3">
-                                <span className="text-secondary font-serif">02.</span> Uso das Informações
+                                <span className="text-secondary font-serif">02.</span> Operação e Pagamentos
                             </h2>
                             <p className="font-medium">
-                                Utilizamos seus dados exclusivamente para:
-                            </p>
-                            <ul className="list-disc pl-6 space-y-2 font-medium">
-                                <li>Gerenciar seu acesso ao sistema.</li>
-                                <li>Processar pagamentos e assinaturas.</li>
-                                <li>Enviar atualizações críticas e comunicações de suporte.</li>
-                                <li>Personalizar sua experiência no dashboard.</li>
-                            </ul>
-                        </section>
-
-                        <section className="space-y-4">
-                            <h2 className="text-xl font-black text-[#13283b] dark:text-white uppercase tracking-tight flex items-center gap-3">
-                                <span className="text-secondary font-serif">03.</span> Proteção de Dados
-                            </h2>
-                            <p className="font-medium">
-                                Implementamos medidas de segurança técnicas e administrativas para proteger seus dados pessoais
-                                contra acesso não autorizado, alteração, divulgação ou destruição. Utilizamos criptografia e
-                                protocolos de segurança de ponta.
+                                Seus dados de pagamento são processados de forma segura pelo gateway <span className="font-bold">Asaas</span>.
+                                O Risu não armazena números de cartões de crédito em seus servidores, mantendo apenas tokens de cobrança.
                             </p>
                         </section>
 
                         <section className="space-y-4">
                             <h2 className="text-xl font-black text-[#13283b] dark:text-white uppercase tracking-tight flex items-center gap-3">
-                                <span className="text-secondary font-serif">04.</span> Compartilhamento de Terceiros
+                                <span className="text-secondary font-serif">03.</span> Proteção e Segurança
                             </h2>
                             <p className="font-medium">
-                                Não vendemos seus dados para terceiros. O compartilhamento ocorre apenas com parceiros essenciais
-                                para o funcionamento do serviço, como processadores de pagamento e provedores de infraestrutura cloud.
+                                Implementamos criptografia SSL e firewalls em nossa infraestrutura na nuvem. Mantemos registros de acesso
+                                (logs) conforme exigido pelo Marco Civil da Internet.
+                            </p>
+                        </section>
+
+                        <section className="space-y-4">
+                            <h2 className="text-xl font-black text-[#13283b] dark:text-white uppercase tracking-tight flex items-center gap-3">
+                                <span className="text-secondary font-serif">04.</span> Compartilhamento
+                            </h2>
+                            <p className="font-medium">
+                                Seus dados são compartilhados apenas com parceiros operacionais necessários: processador de pagamentos (Asaas),
+                                serviço de hospedagem (AWS/Supabase) e ferramentas de comunicação (WhatsApp/Email).
                             </p>
                         </section>
 

@@ -307,6 +307,8 @@ export default function Landing() {
                     <div className="flex gap-6 opacity-40 text-[10px] font-black uppercase tracking-widest">
                         <Link to="/terms" className="hover:opacity-100">Termos</Link>
                         <Link to="/privacy" className="hover:opacity-100">Privacidade</Link>
+                        <Link to="/refund" className="hover:opacity-100">Cancelamento</Link>
+                        <Link to="/lgpd" className="hover:opacity-100">LGPD</Link>
                     </div>
                 </div>
             </footer >

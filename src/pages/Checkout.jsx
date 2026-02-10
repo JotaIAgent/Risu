@@ -46,6 +46,7 @@ export default function Checkout() {
     const [couponError, setCouponError] = useState('')
     const [appliedCoupon, setAppliedCoupon] = useState(null)
     const [isLoading, setIsLoading] = useState(false)
+    const [acceptedTerms, setAcceptedTerms] = useState(false)
     const [error, setError] = useState('')
 
     const plan = plans[planId] || plans['monthly']
@@ -263,10 +264,32 @@ export default function Checkout() {
                                 ))}
                             </ul>
 
+                            <div className="mb-8 space-y-4">
+                                <label className="flex items-start gap-3 cursor-pointer group">
+                                    <div className="mt-1 relative">
+                                        <input
+                                            type="checkbox"
+                                            checked={acceptedTerms}
+                                            onChange={(e) => setAcceptedTerms(e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-5 h-5 border-2 border-blue-400/30 rounded-md bg-white/5 transition-all group-hover:border-blue-400 peer-checked:bg-blue-500 peer-checked:border-blue-500 flex items-center justify-center">
+                                            <Check size={14} className={`text-white transition-opacity ${acceptedTerms ? 'opacity-100' : 'opacity-0'}`} strokeWidth={4} />
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase tracking-widest leading-tight opacity-90 select-none">
+                                        Li e aceito os <Link to="/terms" target="_blank" className="text-blue-400 hover:underline">Termos de Uso</Link>, <Link to="/privacy" target="_blank" className="text-blue-400 hover:underline">Privacidade</Link> e <Link to="/refund" target="_blank" className="text-blue-400 hover:underline">Reembolso</Link>.
+                                    </span>
+                                </label>
+                            </div>
+
                             <button
                                 onClick={handleSubscribe}
-                                disabled={isLoading}
-                                className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3"
+                                disabled={isLoading || !acceptedTerms}
+                                className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-3 ${isLoading || !acceptedTerms
+                                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed grayscale'
+                                    : 'bg-blue-600 hover:bg-blue-500 text-white hover:scale-[1.02]'
+                                    }`}
                             >
                                 {isLoading ? <Loader2 size={18} className="animate-spin" /> : 'Assinar Agora'}
                             </button>

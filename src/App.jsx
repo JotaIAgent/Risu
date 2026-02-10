@@ -45,6 +45,8 @@ import Guide from './pages/Guide'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Checkout from './pages/Checkout'
+import Refund from './pages/Refund'
+import LGPD from './pages/LGPD'
 
 // Custom Protected Route for Clients (Users)
 const ProtectedRoute = () => {
@@ -146,6 +148,8 @@ function App() {
           <Route path="/signup" element={getAuthRedirect(Signup)} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/refund" element={<Refund />} />
+          <Route path="/lgpd" element={<LGPD />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/confirm-email" element={<ConfirmEmail />} />
           <Route path="/forgot-password" element={getAuthRedirect(ForgotPassword)} />
