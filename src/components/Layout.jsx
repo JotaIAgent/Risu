@@ -17,10 +17,10 @@ export function Layout() {
                         <button className="text-text-secondary-light dark:text-text-secondary-dark hover:text-primary focus:outline-none">
                             <Menu size={24} />
                         </button>
-                        <span className="ml-4 text-xl font-bold text-primary">Gestão</span>
+                        <span className="ml-4 text-2xl font-black text-primary tracking-tighter">Risu</span>
                     </div>
 
-                    <h1 className="text-2xl font-bold hidden md:block">Sistema de Gestão</h1>
+                    <h1 className="text-2xl font-bold hidden md:block">Sistema Risu</h1>
 
                     <div className="flex items-center gap-4">
                         <button

@@ -102,7 +102,7 @@ export default function Terms() {
                             <ShieldCheck className="text-green-500" size={20} />
                             <span className="text-xs font-black uppercase tracking-widest">Navegação Segura</span>
                         </div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Gestão Aluguel</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Risu</p>
                     </div>
                 </div>
             </main>

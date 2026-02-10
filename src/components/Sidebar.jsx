@@ -24,7 +24,7 @@ export function Sidebar() {
     return (
         <aside className="w-64 flex flex-col bg-surface-light dark:bg-surface-dark border-r border-border-light dark:border-border-dark hidden md:flex transition-colors duration-300 z-20">
             <div className="h-20 flex items-center justify-center border-b border-border-light dark:border-border-dark px-6">
-                <span className="text-2xl font-bold text-primary tracking-tight">Gestão<span className="text-text-primary-light dark:text-white">Rental</span></span>
+                <span className="text-3xl font-black text-primary tracking-tighter">Risu</span>
             </div>
 
             <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">

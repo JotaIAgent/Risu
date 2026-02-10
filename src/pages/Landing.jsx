@@ -116,7 +116,7 @@ export default function Landing() {
             < section className="pt-32 pb-20 px-6 bg-[#13283b] text-white" >
                 <div className="max-w-4xl mx-auto text-center">
                     <span className="inline-block px-4 py-1.5 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 animate-fade-in">
-                        Gestão de Locações Moderna
+                        Gestão de Locações Risu
                     </span>
                     <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight">
                         Controle total da sua locação, do orçamento ao financeiro.

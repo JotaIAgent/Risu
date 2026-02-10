@@ -49,7 +49,7 @@ export default function Login() {
                             </svg>
                         </div>
                         <h2 className="text-4xl font-black tracking-tight text-text-primary-light dark:text-text-primary-dark uppercase">Acesso</h2>
-                        <p className="text-text-secondary-light dark:text-text-secondary-dark font-medium">Bem-vindo à sua Gestão de Aluguéis.</p>
+                        <p className="text-text-secondary-light dark:text-text-secondary-dark font-medium">Bem-vindo ao Risu.</p>
                     </div>
 
                     <div className="app-card p-8 md:p-10 shadow-2xl shadow-primary/5">
@@ -117,7 +117,7 @@ export default function Login() {
                     </div>
 
                     <p className="text-center text-[10px] uppercase font-black tracking-[0.2em] text-text-secondary-light/40 py-8">
-                        &copy; 2025 Antigravity Gestão Profissional
+                        &copy; {new Date().getFullYear()} Risu. Todos os direitos reservados.
                     </p>
                 </div>
             </div>
